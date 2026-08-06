@@ -69,6 +69,21 @@ textarea{min-height:110px;resize:vertical;font-family:var(--mono);font-size:12px
 .sonuc span b{font-family:var(--mono)}
 .bar{height:7px;background:var(--line-soft);border-radius:5px;overflow:hidden;margin-top:6px}
 .bar>i{display:block;height:100%;background:var(--accent-2)}
+mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
+.grp{border:1px solid var(--line-soft);border-radius:9px;margin-bottom:9px;overflow:hidden;background:#fff}
+.grp-h{background:#F2F6F7;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.grp-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
+.itm{display:flex;gap:9px;align-items:center;padding:9px 12px;border-top:1px solid var(--line-soft)}
+.itm .ad{flex:1;min-width:0}
+.itm a{color:var(--accent);font-weight:600;text-decoration:none}
+.itm a:hover{text-decoration:underline}
+.ktrio{display:flex;gap:5px;flex:none}
+.ktrio button{border:1px solid var(--line);background:#fff;color:var(--ink-3);border-radius:6px;padding:4px 9px;font-size:12px;font-weight:600}
+.ktrio button.on[data-v=b]{background:var(--ok);border-color:var(--ok);color:#fff}
+.ktrio button.on[data-v=i]{background:var(--warn);border-color:var(--warn);color:#fff}
+.ktrio button.on[data-v=g]{background:var(--ink-3);border-color:var(--ink-3);color:#fff}
+.ozet{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.ozet b{font-family:var(--mono);font-size:15px;display:block;color:var(--ink)}
 @media(max-width:520px){.grid3{grid-template-columns:1fr}}
 </style>
 
@@ -103,7 +118,7 @@ textarea{min-height:110px;resize:vertical;font-family:var(--mono);font-size:12px
     </div>
   </section>
 
-  <section class="page" id="pg-paket">
+  <section class="page" id="pg-paketGizli" style="display:none!important">
     <h1>Paket yükle</h1><p class="sub">Öğretmeninin gönderdiği ödev paketini buraya yapıştır.</p>
     <div class="card">
       <textarea id="pIn" placeholder="BIYOPAKET1:… ile başlayan metni yapıştır"></textarea>
@@ -111,7 +126,54 @@ textarea{min-height:110px;resize:vertical;font-family:var(--mono);font-size:12px
       <p class="hint" style="margin-top:9px">Yeni paket, girdiğin eski sonuçları silmez — üzerine ekler.</p>
     </div>
   </section>
-  <section class="page" id="pg-yedek">
+
+
+  <section class="page" id="pg-kutup">
+    <h1>Test kütüphanesi</h1><p class="sub">Öğretmeninin bütün testleri burada. Ara, dokun, açılsın.</p>
+    <div class="card">
+      <input type="text" id="kq" placeholder="Konu ya da test adı yaz… (boş bırakırsan hepsi listelenir)"
+        oninput="kutupCiz()" style="width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:7px;font-size:15px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:10px">
+        <span class="hint" id="kInfo"></span>
+        <button class="btn ghost sm" onclick="kutupCek()">Yenile</button>
+      </div>
+    </div>
+    <div id="kList"></div>
+  </section>
+
+  <section class="page" id="pg-konu">
+    <h1>Konu takibi</h1><p class="sub">Her konuyu işaretle. Yanındaki süre, o konuyu bitirmen için gereken tahmini çalışma saati.</p>
+    <div class="card"><div class="ozet" id="konuOzet"></div><div class="bar" style="margin-top:11px"><i id="konuBar" style="width:0%"></i></div></div>
+    <div class="card" style="padding:12px">
+      <label>Sınıf</label><select id="konuSinif" onchange="konuCiz()"></select>
+    </div>
+    <div id="konuList"></div>
+  </section>
+
+  <section class="page" id="pg-ekle">
+    <h1>Kendim çözdüm</h1><p class="sub">Ödev dışında çözdüğün testleri de buraya gir. Öğretmenine raporla birlikte gider.</p>
+    <div class="card">
+      <div id="eForm">
+        <div class="errmsg" id="eErr"></div>
+        <label>Test / kaynak adı</label>
+        <input type="text" id="eAd" placeholder="Örn. Palme AYT Deneme 4 – Biyoloji" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px">
+        <div style="margin-top:10px"><label>Sınıf</label><select id="eSinif" onchange="eAgac()"></select></div>
+        <div style="margin-top:10px"><label>Ünite</label><select id="eUnite" onchange="eKonu()"></select></div>
+        <div style="margin-top:10px"><label>Konu</label><select id="eKonu2"></select></div>
+        <div class="grid3" style="margin-top:12px">
+          <div><label>Doğru <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eD" placeholder="zorunlu"></div>
+          <div><label>Yanlış <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eY" placeholder="zorunlu"></div>
+          <div><label>Boş <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eB" placeholder="zorunlu"></div>
+        </div>
+        <div style="margin-top:10px"><label>Yanlışlarının çoğu neden oldu?</label><select id="eSebep"></select></div>
+        <div style="margin-top:10px"><label>Çözdüğün tarih</label><input type="date" id="eTarih" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:7px"></div>
+        <button class="btn wide" style="margin-top:13px" onclick="ekstraEkle()">Kaydet</button>
+      </div>
+    </div>
+    <div id="eList"></div>
+  </section>
+
+  <section class="page" id="pg-ayarlar">
     <h1>Yedek</h1><p class="sub">Kayıtların yalnızca bu cihazın tarayıcısında durur. Ayda bir yedek al.</p>
     <div class="card">
       <button class="btn wide" onclick="yedekAl()">Yedek dosyasını indir</button>
@@ -122,6 +184,12 @@ textarea{min-height:110px;resize:vertical;font-family:var(--mono);font-size:12px
     <div class="card">
       <h3>Öğretmenin</h3>
       <div class="meta" id="kocBilgi"></div>
+    </div>
+    <div class="card">
+      <h3>Ödev paketini elle yükle</h3>
+      <div class="meta">Bağlantı açılmazsa öğretmeninin gönderdiği metni buraya yapıştır.</div>
+      <textarea id="pIn" placeholder="Bağlantının ya da paket metninin tamamı"></textarea>
+      <button class="btn wide" style="margin-top:9px" onclick="paketYukle()">Yükle</button>
     </div>
   </section>
 
@@ -134,19 +202,75 @@ const $=id=>document.getElementById(id);
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function b64e(s){const b=new TextEncoder().encode(s);let x='';b.forEach(c=>x+=String.fromCharCode(c));return btoa(x);}
 function b64d(x){const b=atob(x);return new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0)));}
+function b64u(s){return b64e(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function b64ud(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return b64d(s);}
+function acLink(l){return (l||'').startsWith('d:')?('https://drive.google.com/file/d/'+l.slice(2)+'/view'):(l||'');}
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3400);}
 function bugun(){return new Date().toISOString().slice(0,10);}
 function trh(d){if(!d)return '—';const p=d.split('-');return p[2]+'.'+p[1]+'.'+p[0];}
 function net(D,Y){return Math.round((D-(Y||0)/4)*100)/100;}
 
+const AGAC={
+ '9. Sınıf':{
+  'Yaşam Bilimi Biyoloji':['Biyoloji ve Canlıların Ortak Özellikleri','İnorganik Bileşikler (Su, Mineral, Asit-Baz-Tuz)','Karbonhidratlar','Lipitler','Proteinler','Enzimler','Hormonlar','Vitaminler','Nükleik Asitler ve ATP'],
+  'Hücre':['Hücre Teorisi ve Hücrenin Yapısı','Organeller','Çekirdek','Hücre Zarından Madde Geçişi'],
+  'Canlılar Dünyası':['Canlıların Sınıflandırılması','Bakteriler','Arkeler','Protistalar','Mantarlar','Bitkiler','Hayvanlar','Virüsler']},
+ '10. Sınıf':{
+  'Hücre Bölünmeleri':['Mitoz','Eşeysiz Üreme','Mayoz','Eşeyli Üreme'],
+  'Kalıtımın Genel İlkeleri':['Mendel İlkeleri','Eşeye Bağlı Kalıtım','Kan Grupları','Soyağacı','Genetik Uygulamalar'],
+  'Ekosistem Ekolojisi':['Ekosistemin Yapısı','Enerji Akışı ve Besin Zinciri','Madde Döngüleri','Güncel Çevre Sorunları']},
+ '11. Sınıf':{
+  'Denetleyici ve Düzenleyici Sistemler':['Sinir Sistemi','Endokrin Sistem','Duyu Organları'],
+  'Destek ve Hareket Sistemi':['Kemik ve İskelet','Kaslar'],
+  'Sindirim Sistemi':['Sindirim Organları','Sindirim Enzimleri ve Emilim'],
+  'Dolaşım Sistemi':['Kalp ve Damarlar','Kan','Lenf Sistemi','Bağışıklık'],
+  'Solunum Sistemi':['Solunum Organları','Gaz Değişimi ve Taşınması'],
+  'Üriner Sistem':['Boşaltım ve Nefron','İdrar Oluşumu'],
+  'Üreme ve Gelişim':['Üreme Sistemi','Embriyonik Gelişim'],
+  'Komünite ve Popülasyon Ekolojisi':['Komünite Ekolojisi','Süksesyon','Popülasyon Ekolojisi']},
+ '12. Sınıf':{
+  'Genden Proteine':['Nükleik Asitler ve DNA Replikasyonu','Genetik Şifre ve Protein Sentezi','Genetik Mühendisliği ve Biyoteknoloji'],
+  'Canlılarda Enerji Dönüşümleri':['Canlılık ve Enerji','Fotosentez','Kemosentez','Hücresel Solunum','Fermantasyon'],
+  'Bitki Biyolojisi':['Bitkilerin Yapısı','Bitkilerde Madde Taşınması','Bitkilerde Eşeyli Üreme','Bitkilerde Hareket ve Uyarılma'],
+  'Canlılar ve Çevre':['Canlılar ve Çevre İlişkileri']},
+ 'Karma / Deneme':{'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Deneme']}
+};
+
+const SURE={
+'Biyoloji ve Canlıların Ortak Özellikleri':2,'İnorganik Bileşikler (Su, Mineral, Asit-Baz-Tuz)':3,
+'Karbonhidratlar':2,'Lipitler':2,'Proteinler':2,'Enzimler':3,'Hormonlar':1,'Vitaminler':2,'Nükleik Asitler ve ATP':3,
+'Hücre Teorisi ve Hücrenin Yapısı':2,'Organeller':4,'Çekirdek':1,'Hücre Zarından Madde Geçişi':5,
+'Canlıların Sınıflandırılması':2,'Bakteriler':3,'Arkeler':1,'Protistalar':2,'Mantarlar':2,'Bitkiler':2,'Hayvanlar':3,'Virüsler':2,
+'Mitoz':3,'Eşeysiz Üreme':2,'Mayoz':4,'Eşeyli Üreme':2,
+'Mendel İlkeleri':5,'Eşeye Bağlı Kalıtım':3,'Kan Grupları':2,'Soyağacı':3,'Genetik Uygulamalar':2,
+'Ekosistemin Yapısı':2,'Enerji Akışı ve Besin Zinciri':3,'Madde Döngüleri':3,'Güncel Çevre Sorunları':1,
+'Sinir Sistemi':6,'Endokrin Sistem':4,'Duyu Organları':4,'Kemik ve İskelet':3,'Kaslar':3,
+'Sindirim Organları':3,'Sindirim Enzimleri ve Emilim':3,'Kalp ve Damarlar':4,'Kan':3,'Lenf Sistemi':1,'Bağışıklık':3,
+'Solunum Organları':2,'Gaz Değişimi ve Taşınması':3,'Boşaltım ve Nefron':3,'İdrar Oluşumu':3,
+'Üreme Sistemi':3,'Embriyonik Gelişim':3,'Komünite Ekolojisi':3,'Süksesyon':1,'Popülasyon Ekolojisi':3,
+'Nükleik Asitler ve DNA Replikasyonu':4,'Genetik Şifre ve Protein Sentezi':5,'Genetik Mühendisliği ve Biyoteknoloji':2,
+'Canlılık ve Enerji':2,'Fotosentez':6,'Kemosentez':1,'Hücresel Solunum':6,'Fermantasyon':2,
+'Bitkilerin Yapısı':4,'Bitkilerde Madde Taşınması':4,'Bitkilerde Eşeyli Üreme':3,'Bitkilerde Hareket ve Uyarılma':2,
+'Canlılar ve Çevre İlişkileri':2};
+
+function konuDuzlem(){const o=[];for(const a in AGAC)for(const u in AGAC[a])for(const k of AGAC[a][u])o.push({sinif:a,unite:u,konu:k});return o;}
+function govde(w){return w.slice(0,Math.max(5,Math.floor(w.length*0.75)));}
+function skorla(m,konu){const n=nrm(m);const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=4);
+  if(!kel.length)return 0;let h=0;kel.forEach(w=>{if(n.includes(govde(w)))h++;});return h/kel.length;}
+function adTahmin(ad,st){let en=null,es=0;konuDuzlem().forEach(x=>{let v=skorla(ad,x.konu);if(v<0.6)return;
+  if(st&&x.sinif===st)v+=0.05;if(v>es){es=v;en=x;}});return en;}
+function nrm(x){return (x||'').toLocaleLowerCase('tr').replace(/[ıi̇]/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').trim();}
+function vurgu(t,q){if(!q)return esc(t);const n=nrm(t),i=n.indexOf(q);if(i<0)return esc(t);
+  return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));}
+
 const SEBEPLER=['','Bilmiyordum','Yanlış okudum','Dikkatsizlik','Zaman yetmedi','Karıştırdım'];
 
 let S=yukle();
 function yukle(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {logo:null,ad:'Biyoser',kocTel:'',ogrenci:null,odevler:[]};}
+  return {logo:null,ad:'Biyoser',kocTel:'',kocPanel:'',driveUrl:'',kutuphane:[],kutupTarih:'',konuDurum:{},ogrenci:null,odevler:[],ekstra:[]};}
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(S));}
 
-const SAYFALAR=[['odev','Ödevlerim'],['ilerleme','İlerleme'],['rapor','Rapor gönder'],['paket','Paket yükle'],['yedek','Yedek']];
+const SAYFALAR=[['odev','Ödevlerim'],['kutup','Test kütüphanesi'],['konu','Konu takibi'],['ekle','Kendim çözdüm'],['ilerleme','İlerleme'],['rapor','Rapor gönder'],['ayarlar','Ayarlar']];
 function tabCiz(){
   $('tabs').innerHTML=SAYFALAR.map(([k,a],i)=>`<button data-k="${k}" class="${i===0?'on':''}" onclick="git('${k}')">${a}</button>`).join('');
 }
@@ -155,17 +279,32 @@ function git(k){
   $('pg-'+k).classList.add('on');
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
   if(k==='ilerleme')ilerlemeCiz();
-  if(k==='yedek')kocCiz();
+  if(k==='ayarlar')kocCiz();
+  if(k==='ekle')ekleCiz();
+  if(k==='kutup')kutupCiz();
+  if(k==='konu')konuCiz();
   window.scrollTo(0,0);
 }
 
 /* ---------- paket ---------- */
-function paketYukle(){
-  const raw=$('pIn').value.trim();
-  if(!raw.startsWith('BIYOPAKET1:')){toast('Bu bir ödev paketi değil. BIYOPAKET1: ile başlamalı.');return;}
-  let p;try{p=JSON.parse(b64d(raw.slice(11)));}catch(e){toast('Paket okunamadı. Metni baştan sona kopyaladığından emin ol.');return;}
-  if(S.ogrenci&&S.ogrenci.id!==p.ogrenci.id&&!confirm('Bu paket '+p.ogrenci.ad+' adına. Mevcut kayıtların değişecek. Devam?'))return;
-  S.ogrenci=p.ogrenci; S.ad=p.ad||S.ad; if(p.logo)S.logo=p.logo; if(p.kocTel)S.kocTel=p.kocTel;
+function paketCoz(raw){
+  raw=(raw||'').trim();
+  const i=raw.indexOf('P1:');
+  if(i>=0){
+    const q=JSON.parse(b64ud(raw.slice(i+3)));
+    return {ad:q.a,kocTel:q.t,kocPanel:q.kp||'',driveUrl:q.du||'',logo:null,
+      ogrenci:{id:q.o.i,ad:q.o.n,sinif:q.o.s,hedef:q.o.h},
+      odevler:q.d.map(x=>({id:x.i,verilis:x.v,teslim:x.t,
+        kalemler:x.k.map(k=>({testId:k.i,ad:k.a,link:acLink(k.l),unite:k.u,konu:k.o,soru:k.s,durum:'bekliyor',D:null,Y:null,B:null,sebep:''}))}))};
+  }
+  if(raw.startsWith('BIYOPAKET1:'))return JSON.parse(b64d(raw.slice(11)));
+  throw new Error('bicim');
+}
+function paketYukle(kaynak){
+  const raw=(typeof kaynak==='string'?kaynak:$('pIn').value).trim();
+  let p;try{p=paketCoz(raw);}catch(e){toast('Bu bir ödev paketi değil. Öğretmeninin gönderdiği bağlantının tamamını yapıştır.');return;}
+  if(S.ogrenci&&S.ogrenci.id!==p.ogrenci.id&&!confirm('Bu ödev '+p.ogrenci.ad+' adına. Mevcut kayıtların değişecek. Devam?'))return;
+  S.ogrenci=p.ogrenci; S.ad=p.ad||S.ad; if(p.logo)S.logo=p.logo; if(p.kocTel)S.kocTel=p.kocTel; if(p.kocPanel)S.kocPanel=p.kocPanel; if(p.driveUrl)S.driveUrl=p.driveUrl;
   p.odevler.forEach(yeni=>{
     const eski=S.odevler.find(o=>o.id===yeni.id);
     if(!eski){S.odevler.push(yeni);return;}
@@ -254,7 +393,7 @@ function kaydetKalem(oid,tid){
 
 /* ---------- ilerleme ---------- */
 function ilerlemeCiz(){
-  const kal=S.odevler.flatMap(o=>o.kalemler).filter(k=>k.durum==='ok');
+  const kal=tumKalemler();
   if(!kal.length){$('ilerlemeOut').innerHTML='<div class="empty"><b>Henüz sonuç yok</b>Bir test çözüp sonucunu girdiğinde burası dolmaya başlar.</div>';return;}
   const D=kal.reduce((a,k)=>a+k.D,0), Y=kal.reduce((a,k)=>a+(k.Y||0),0), B=kal.reduce((a,k)=>a+(k.B||0),0);
   const t=D+Y+B;
@@ -277,21 +416,178 @@ function ilerlemeCiz(){
       Object.entries(sebep).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`<div style="display:flex;font-size:13.5px;padding:3px 0"><span>${esc(s)}</span><b style="margin-left:auto" class="mono">${n} test</b></div>`).join('')+`</div>`:'');
 }
 
+
+/* ---------- kendim çözdüm ---------- */
+function eAgac(){
+  const sn=$('eSinif').value;
+  $('eUnite').innerHTML=Object.keys(AGAC[sn]||{}).map(u=>`<option>${esc(u)}</option>`).join('');
+  eKonu();
+}
+function eKonu(){
+  const sn=$('eSinif').value,u=$('eUnite').value;
+  $('eKonu2').innerHTML=((AGAC[sn]||{})[u]||[]).map(k=>`<option>${esc(k)}</option>`).join('');
+}
+function ekleCiz(){
+  if(!$('eSinif').options.length){
+    $('eSinif').innerHTML=Object.keys(AGAC).map(x=>`<option>${esc(x)}</option>`).join('');
+    $('eSebep').innerHTML=SEBEPLER.map(x=>`<option>${x}</option>`).join('');
+    if(S.ogrenci&&S.ogrenci.sinif&&AGAC[S.ogrenci.sinif])$('eSinif').value=S.ogrenci.sinif;
+    eAgac();
+  }
+  if(!$('eTarih').value)$('eTarih').value=bugun();
+  const L=S.ekstra||[];
+  if(!L.length){$('eList').innerHTML='<div class="empty"><b>Henüz kendi kaydın yok</b>Ödev dışında çözdüğün her testi buraya girersen ilerlemen daha doğru görünür.</div>';return;}
+  $('eList').innerHTML='<div class="card"><h3>Kendi çözdüklerin ('+L.length+')</h3>'+
+    [...L].reverse().map(x=>`<div class="tst done"><div class="tst-h">
+      <div class="ad"><b>${esc(x.ad)}</b><span class="k">${esc(x.konu)} · ${trh(x.tarih)}</span></div>
+      <button class="btn ghost sm" onclick="ekstraSil('${x.id}')">Sil</button></div>
+      <div class="sonuc"><span>Doğru <b>${x.D}</b></span><span>Yanlış <b>${x.Y}</b></span><span>Boş <b>${x.B}</b></span>
+      <span>Net <b>${net(x.D,x.Y)}</b></span>${x.sebep?`<span>${esc(x.sebep)}</span>`:''}</div></div>`).join('')+'</div>';
+}
+function ekstraEkle(){
+  const err=$('eErr'), ad=$('eAd').value.trim();
+  const dEl=$('eD'),yEl=$('eY'),bEl=$('eB');
+  [dEl,yEl,bEl].forEach(e=>e.classList.remove('err'));
+  if(!ad){err.textContent='Testin adını yaz — sonradan hangisi olduğunu hatırlaman için.';err.classList.add('on');$('eAd').focus();return;}
+  const bos=[];
+  if(dEl.value.trim()===''){dEl.classList.add('err');bos.push('doğru');}
+  if(yEl.value.trim()===''){yEl.classList.add('err');bos.push('yanlış');}
+  if(bEl.value.trim()===''){bEl.classList.add('err');bos.push('boş');}
+  if(bos.length){err.textContent=bos.join(', ')+' sayısını girmen gerekiyor. Hiç yoksa 0 yaz.';err.classList.add('on');return;}
+  const D=+dEl.value,Y=+yEl.value,B=+bEl.value;
+  if([D,Y,B].some(x=>isNaN(x)||x<0||!Number.isInteger(x))){err.textContent='Sayılar tam ve sıfırdan büyük olmalı.';err.classList.add('on');return;}
+  err.classList.remove('on');
+  S.ekstra=S.ekstra||[];
+  S.ekstra.push({id:'e'+Math.random().toString(36).slice(2,9),ad,sinif:$('eSinif').value,unite:$('eUnite').value,
+    konu:$('eKonu2').value,D,Y,B,sebep:$('eSebep').value,tarih:$('eTarih').value||bugun()});
+  kaydet();
+  $('eAd').value='';dEl.value='';yEl.value='';bEl.value='';
+  ekleCiz();toast('Eklendi · net '+net(D,Y));
+}
+function ekstraSil(id){
+  if(!confirm('Bu kayıt silinsin mi?'))return;
+  S.ekstra=(S.ekstra||[]).filter(x=>x.id!==id);kaydet();ekleCiz();
+}
+function tumKalemler(){
+  const a=S.odevler.flatMap(o=>o.kalemler).filter(k=>k.durum==='ok');
+  const b=(S.ekstra||[]).map(x=>({ad:x.ad,konu:x.konu,D:x.D,Y:x.Y,B:x.B,sebep:x.sebep,tarih:x.tarih}));
+  return a.concat(b);
+}
+
+
+/* ---------- test kütüphanesi ---------- */
+async function kutupCek(){
+  if(!S.driveUrl){toast('Kütüphane bağlantısı gelmemiş. Öğretmeninden yeni ödev bağlantısı iste.');return;}
+  $('kInfo').textContent='Testler yükleniyor…';
+  try{
+    const r=await fetch(S.driveUrl);
+    const j=await r.json();
+    S.kutuphane=(j||[]).filter(x=>x&&x.ad&&x.link).map(x=>({a:String(x.ad).replace(/\.(pdf|docx?|jpe?g|png)$/i,''),l:x.link,f:x.klasor||''}));
+    S.kutupTarih=bugun();kaydet();kutupCiz();
+    toast(S.kutuphane.length+' test yüklendi.');
+  }catch(e){
+    $('kInfo').textContent='Bağlanılamadı. İnternetini kontrol et ya da sonra dene.';
+  }
+}
+function kutupCiz(){
+  const L=S.kutuphane||[];
+  if(!L.length){
+    $('kList').innerHTML='<div class="empty"><b>Kütüphane henüz yüklenmedi</b>Yukarıdaki "Yenile" düğmesine dokun, testler bir kez indirilsin. Sonra internetsiz de görebilirsin.</div>';
+    $('kInfo').textContent=S.driveUrl?'':'Öğretmeninden yeni ödev bağlantısı iste.';
+    return;
+  }
+  const q=nrm(($('kq')||{}).value||'');
+  const st=S.ogrenci&&S.ogrenci.sinif;
+  const list=L.map(x=>{
+    if(!x._k){const t=adTahmin(x.a,st);x._k=t?t.konu:(x.f||'Diğer');x._u=t?t.unite:'Kaynak: '+(x.f||'—');}
+    return x;
+  }).filter(x=>!q||nrm(x.a+' '+x._k+' '+x._u+' '+x.f).includes(q));
+  $('kInfo').textContent = q ? list.length+' test eşleşti' : L.length+' test · güncelleme '+trh(S.kutupTarih);
+  if(!list.length){$('kList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Başka bir kelime dene ya da kutuyu boşalt.</div>';return;}
+  const grup={};
+  list.forEach(x=>{(grup[x._k]=grup[x._k]||[]).push(x);});
+  $('kList').innerHTML=Object.entries(grup).map(([k,tt])=>`<div class="grp">
+    <div class="grp-h">${vurgu(k,q)}<span class="n">${tt.length} test</span></div>`+
+    tt.map(x=>`<div class="itm"><div class="ad"><a href="${esc(x.l)}" target="_blank" rel="noopener">${vurgu(x.a,q)}</a>
+      ${x.f?`<span class="k" style="display:block;font-size:11.5px;color:var(--ink-3)">${esc(x.f)}</span>`:''}</div>
+      <button class="btn ghost sm" onclick="cozdumGec('${esc(x.a).replace(/'/g,"&#39;")}','${esc(x._k).replace(/'/g,"&#39;")}')">Çözdüm</button></div>`).join('')+
+    `</div>`).join('');
+}
+function cozdumGec(ad,konu){
+  git('ekle');
+  setTimeout(()=>{
+    $('eAd').value=ad;
+    const t=konuDuzlem().find(x=>x.konu===konu);
+    if(t){$('eSinif').value=t.sinif;eAgac();$('eUnite').value=t.unite;eKonu();$('eKonu2').value=t.konu;}
+    $('eD').focus();
+  },60);
+}
+
+/* ---------- konu takibi ---------- */
+const DURUM={b:'Bitti',i:'İşliyorum',g:'Görmedim'};
+function konuCiz(){
+  const sel=$('konuSinif');
+  if(!sel.options.length){
+    sel.innerHTML=Object.keys(AGAC).filter(x=>x!=='Karma / Deneme').map(x=>`<option>${esc(x)}</option>`).join('');
+    if(S.ogrenci&&AGAC[S.ogrenci.sinif])sel.value=S.ogrenci.sinif;
+  }
+  S.konuDurum=S.konuDurum||{};
+  // genel özet: tüm sınıflar
+  let tS=0,bS=0,iS=0;
+  Object.keys(AGAC).filter(x=>x!=='Karma / Deneme').forEach(sn=>{
+    Object.values(AGAC[sn]).flat().forEach(k=>{
+      const h=SURE[k]||2;tS+=h;
+      const d=S.konuDurum[k];
+      if(d==='b')bS+=h; else if(d==='i')iS+=h;
+    });
+  });
+  const kalan=tS-bS;
+  $('konuOzet').innerHTML=`<span>Toplam<b>${tS} sa</b></span><span>Biten<b>${bS} sa</b></span>
+    <span>İşlenen<b>${iS} sa</b></span><span>Kalan<b>${kalan} sa</b></span>
+    <span>Tamamlanma<b>%${tS?Math.round(bS/tS*100):0}</b></span>`;
+  $('konuBar').style.width=(tS?bS/tS*100:0)+'%';
+  const sn=sel.value;
+  $('konuList').innerHTML=Object.entries(AGAC[sn]||{}).map(([u,kk])=>{
+    const top=kk.reduce((a,k)=>a+(SURE[k]||2),0);
+    const bit=kk.filter(k=>S.konuDurum[k]==='b').reduce((a,k)=>a+(SURE[k]||2),0);
+    return `<div class="grp"><div class="grp-h">${esc(u)}<span class="n">${bit}/${top} sa</span></div>`+
+      kk.map(k=>{
+        const d=S.konuDurum[k]||'g';
+        return `<div class="itm"><div class="ad">${esc(k)}
+          <span style="display:block;font-size:11.5px;color:var(--ink-3)">${SURE[k]||2} saatlik çalışma</span></div>
+          <div class="ktrio">`+
+          ['b','i','g'].map(v=>`<button data-v="${v}" class="${d===v?'on':''}" onclick="konuSet('${esc(k).replace(/'/g,"&#39;")}','${v}')">${DURUM[v]}</button>`).join('')+
+          `</div></div>`;
+      }).join('')+`</div>`;
+  }).join('');
+}
+function konuSet(k,v){
+  S.konuDurum=S.konuDurum||{};
+  if(v==='g')delete S.konuDurum[k]; else S.konuDurum[k]=v;
+  kaydet();konuCiz();
+}
+
 /* ---------- rapor ---------- */
 function raporUret(){
   if(!S.ogrenci){toast('Önce ödev paketini yükle.');return;}
   const sonuclar=[];
   S.odevler.forEach(o=>o.kalemler.forEach(k=>{if(k.durum==='ok')
     sonuclar.push({odevId:o.id,testId:k.testId,D:k.D,Y:k.Y||0,B:k.B||0,sebep:k.sebep||'',tarih:k.tarih||bugun()});}));
-  if(!sonuclar.length){toast('Gönderecek sonuç yok. Önce bir testin sonucunu gir.');return;}
-  const r={t:'BIYORAPOR',v:1,tarih:bugun(),ogrenciId:S.ogrenci.id,ogrenciAd:S.ogrenci.ad,sonuclar};
-  $('rOut').value='BIYORAPOR1:'+b64e(JSON.stringify(r));
-  toast(sonuclar.length+' sonuç paketlendi.');
+  const ek=(S.ekstra||[]).map(x=>({i:x.id,a:x.ad,u:x.unite,o:x.konu,d:x.D,y:x.Y,b:x.B,k:x.sebep||'',g:x.tarih}));
+  if(!sonuclar.length&&!ek.length&&!Object.keys(S.konuDurum||{}).length){toast('Gönderecek bir şey yok. Önce bir test sonucu gir ya da konu takibini işaretle.');return;}
+  const r={v:2,g:bugun(),oi:S.ogrenci.id,on:S.ogrenci.ad,
+    s:sonuclar.map(x=>({o:x.odevId,t:x.testId,d:x.D,y:x.Y,b:x.B,k:x.sebep,g:x.tarih})),e:ek,kd:S.konuDurum||{}};
+  const kod='R1:'+b64u(JSON.stringify(r));
+  const base=(S.kocPanel||'').split('#')[0];
+  $('rOut').value = base ? base+'#'+kod : kod;
+  toast((sonuclar.length+ek.length)+' sonuç hazır. WhatsApp\'tan gönder.');
 }
 function kopyala(){const t=$('rOut');if(!t.value){toast('Önce raporu oluştur.');return;}t.select();navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>document.execCommand('copy'));}
 function wa(){if(!$('rOut').value){toast('Önce raporu oluştur.');return;}
   const n=(S.kocTel||'').replace(/\D/g,'');
-  window.open('https://wa.me/'+n+'?text='+encodeURIComponent('Biyoloji ödev raporum:\n\n'+$('rOut').value),'_blank');}
+  const v=$('rOut').value;
+  const msg=v.startsWith('http')?('Biyoloji ödev raporum hazır, bağlantıya dokunun hocam:\n\n'+v):('Biyoloji ödev raporum:\n\n'+v);
+  window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');}
 
 /* ---------- başlat ---------- */
 function logoCiz(){
@@ -318,6 +614,14 @@ document.getElementById('yFile').onchange=e=>{
     S=d;kaydet();basla();kocCiz();toast('Yedek yüklendi.');}catch(err){toast('Bu dosya okunamadı.');}};
   rd.readAsText(f);
 };
-function basla(){logoCiz();tabCiz();odevCiz();}
+function hashOku(){
+  const h=decodeURIComponent(location.hash||'');
+  if(h.indexOf('P1:')<0)return;
+  paketYukle(h.replace(/^#/,''));
+  history.replaceState(null,'',location.pathname+location.search);
+}
+function basla(){logoCiz();tabCiz();odevCiz();
+  if(S.driveUrl&&!(S.kutuphane||[]).length)kutupCek();}
 basla();
+hashOku();
 </script>

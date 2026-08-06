@@ -227,21 +227,23 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
     <!-- PAKET / RAPOR -->
     <section class="page" id="pg-paket">
       <h1>Paket ve rapor</h1><p class="sub">Ödevi öğrenciye gönder, çözdüğü sonuçları geri al.</p>
-      <div class="card"><h3>1 · Öğrenciye paket gönder</h3>
+      <div class="card"><h3>1 · Öğrenciye ödev gönder</h3>
         <div class="row">
           <div><label>Öğrenci</label><select id="pOgr"></select></div>
           <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end;gap:8px">
-            <button class="btn" onclick="paketUret()">Paketi oluştur</button>
+            <button class="btn" onclick="paketUret()">Bağlantıyı oluştur</button>
           </div>
         </div>
-        <div style="margin-top:9px"><label><input type="checkbox" id="pLogo" style="width:auto"> Logoyu da pakete koy (ilk gönderimde bir kez yeterli)</label></div>
-        <textarea id="pOut" placeholder="Paket burada belirecek…" style="margin-top:9px"></textarea>
+        <div style="margin-top:9px"><label><input type="checkbox" id="pSadece" style="width:auto" checked> Sadece tamamlanmamış ödevleri gönder (bağlantıyı kısa tutar)</label></div>
+        <div id="pDurum"></div>
+        <textarea id="pOut" placeholder="Tıklanabilir bağlantı burada belirecek…" style="margin-top:9px;min-height:70px"></textarea>
         <div class="row" style="margin-top:8px">
-          <div style="flex:0 0 auto;min-width:auto;display:flex;gap:8px">
+          <div style="flex:0 0 auto;min-width:auto;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" onclick="waGonder()">WhatsApp'ta gönder</button>
             <button class="btn ghost sm" onclick="kopyala('pOut')">Kopyala</button>
-            <button class="btn ghost sm" onclick="waGonder()">WhatsApp'ta aç</button>
           </div>
         </div>
+        <p class="hint" style="margin-top:8px">Öğrenci bağlantıya dokunduğunda panel açılır ve ödevler kendiliğinden yüklenir. Kopyala-yapıştır yok.</p>
       </div>
       <div class="card"><h3>2 · Öğrenciden gelen raporu işle</h3>
         <textarea id="rIn" placeholder="BIYORAPOR1:… ile başlayan metni buraya yapıştır"></textarea>
@@ -259,7 +261,12 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
           <div><label>Senin WhatsApp numaran</label><input type="text" id="aTel" placeholder="05XX XXX XX XX"></div>
           <div><label>Logo dosyası (PNG/JPG/SVG)</label><input type="file" id="aLogo" accept="image/*" style="padding:6px"></div>
         </div>
-        <p class="hint">Numaran öğrenci paneline paketle gider; öğrenci "rapor gönder" dediğinde doğrudan senin sohbetin açılır. Logo tarayıcıya gömülür, dışarı gitmez.</p>
+        <div class="row" style="margin-top:10px">
+          <div><label>Öğrenci panelinin adresi</label><input type="text" id="aOgrUrl" placeholder="https://…/biyoloji-ogrenci-paneli.html"></div>
+          <div><label>Kendi panelinin adresi (isteğe bağlı)</label><input type="text" id="aKocUrl" placeholder="https://…/biyoloji-koc-paneli.html"></div>
+        </div>
+        <p class="hint">Öğrenci panelinin adresi olmadan tıklanabilir ödev bağlantısı üretilemez. Kendi adresini de girersen öğrencinin raporu sana tıklanabilir bağlantı olarak gelir — girmezsen metin olarak gelir.</p>
+        <p class="hint">Numaran öğrenci paneline gider; öğrenci "rapor gönder" dediğinde doğrudan senin sohbetin açılır. Logo tarayıcıya gömülür, dışarı gitmez.</p>
         <button class="btn" style="margin-top:8px" onclick="ayarKaydet()">Kaydet</button>
       </div>
       <div class="card"><h3>Drive köprüsü</h3>
@@ -319,6 +326,9 @@ function nrm(s){return (s||'').toLocaleLowerCase('tr').replace(/[ıi̇]/g,'i').r
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function b64e(str){const b=new TextEncoder().encode(str);let s='';b.forEach(x=>s+=String.fromCharCode(x));return btoa(s);}
 function b64d(x){const b=atob(x);return new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0)));}
+function b64u(s){return b64e(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function b64ud(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return b64d(s);}
+function kisaLink(l){const m=(l||'').match(/\/d\/([-\w]{15,})/);return m?('d:'+m[1]):(l||'');}
 function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3200);}
 function bugun(){return new Date().toISOString().slice(0,10);}
 function trh(d){if(!d)return '—';const [y,m,g]=d.split('-');return g+'.'+m+'.'+y;}
@@ -355,7 +365,7 @@ const AGAC={
 let DB=yukle();
 function yukle(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {v:VER,logo:null,ad:'Biyoser',tel:'',driveUrl:'',ogrenciler:[],katalog:[],odevler:[]};
+  return {v:VER,logo:null,ad:'Biyoser',tel:'',ogrPanelUrl:'',kocPanelUrl:'',driveUrl:'',ogrenciler:[],katalog:[],odevler:[]};
 }
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(DB));}
 
@@ -397,7 +407,7 @@ function ogrCiz(){
   if(!DB.ogrenciler.length){$('ogrList').innerHTML='<div class="empty"><b>Henüz öğrenci yok</b>Yukarıdaki alandan ilk öğrencini ekle.</div>';return;}
   $('ogrList').innerHTML='<div class="card"><table><thead><tr><th>Öğrenci</th><th>Sınıf</th><th>WhatsApp</th><th>Ödev</th><th>Ortalama net</th><th></th></tr></thead><tbody>'+
     DB.ogrenciler.map(o=>{
-      const od=DB.odevler.filter(x=>x.ogrenciId===o.id);
+      const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
       const kal=od.flatMap(x=>x.kalemler);
       const bit=kal.filter(k=>k.durum==='ok');
       const ort=bit.length?(bit.reduce((a,k)=>a+net(k.D,k.Y),0)/bit.length).toFixed(1):'—';
@@ -683,6 +693,15 @@ function takipCiz(){
   const sirali=Object.entries(konu).map(([k,c])=>{
     const t=c.D+c.Y+c.B;return {k,oran:t?Math.round(c.D/t*100):0,t,...c};}).sort((a,b)=>a.oran-b.oran);
   let html='';
+  const kd=(DB.ogrenciler.find(x=>x.id===oid)||{}).konuDurum;
+  if(kd&&Object.keys(kd).length){
+    const bit=Object.entries(kd).filter(x=>x[1]==='b').map(x=>x[0]);
+    const isl=Object.entries(kd).filter(x=>x[1]==='i').map(x=>x[0]);
+    html+=`<div class="card" style="border-color:var(--accent-2)"><h3>Konu takibi
+      <span class="hint" style="float:right;text-transform:none;letter-spacing:0">güncelleme ${trh((DB.ogrenciler.find(x=>x.id===oid)||{}).konuTarih)}</span></h3>
+      <div style="font-size:13px"><b style="color:var(--ok)">Bitti (${bit.length}):</b> ${bit.map(esc).join(', ')||'—'}</div>
+      <div style="font-size:13px;margin-top:7px"><b style="color:var(--warn)">İşliyorum (${isl.length}):</b> ${isl.map(esc).join(', ')||'—'}</div></div>`;
+  }
   if(sirali.length){
     html+='<div class="card"><h3>Konu bazlı başarı (en zayıftan)</h3><table><thead><tr><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Doğru %</th><th>Net</th></tr></thead><tbody>'+
       sirali.map(c=>`<tr><td>${esc(c.k)}</td><td class="mono">${c.D}</td><td class="mono">${c.Y}</td><td class="mono">${c.B}</td>
@@ -691,6 +710,13 @@ function takipCiz(){
   html+=od.map(o=>{
     const bit=o.kalemler.filter(k=>k.durum==='ok').length;
     const gec=o.teslim<bugun()&&bit<o.kalemler.length;
+    if(o.kendi)return `<div class="card" style="border-color:var(--accent-2)"><h3>Kendi çözdükleri
+      <span class="pill p-neu" style="float:right">${o.kalemler.length} test</span></h3>
+      <div class="hint" style="margin-bottom:8px">Öğrencinin ödev dışında çözüp kendi girdiği testler.</div>
+      <table><thead><tr><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Tarih</th></tr></thead><tbody>`+
+      o.kalemler.map(k=>`<tr><td>${esc(k.ad)}</td><td>${esc(k.konu)}</td><td class="mono">${k.D}</td><td class="mono">${k.Y||0}</td>
+      <td class="mono">${k.B||0}</td><td class="mono"><b>${net(k.D,k.Y)}</b></td><td class="hint">${trh(k.tarih)}</td></tr>`).join('')+
+      `</tbody></table></div>`;
     return `<div class="card"><h3>${trh(o.verilis)} · teslim ${trh(o.teslim)} ${gec?'<span class="pill p-bad">gecikti</span>':''}
       <span class="pill ${bit===o.kalemler.length?'p-ok':'p-neu'}" style="float:right">${bit}/${o.kalemler.length}</span></h3>
       <table><thead><tr><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Hata sebebi</th></tr></thead><tbody>`+
@@ -710,30 +736,55 @@ function paketUret(){
   const oid=$('pOgr').value;
   if(!oid){toast('Öğrenci seç.');return;}
   const o=DB.ogrenciler.find(x=>x.id===oid);
-  const od=DB.odevler.filter(x=>x.ogrenciId===oid).map(x=>({
-    id:x.id,verilis:x.verilis,teslim:x.teslim,
-    kalemler:x.kalemler.map(k=>({testId:k.testId,ad:k.ad,link:k.link,unite:k.unite,konu:k.konu,soru:k.soru,durum:k.durum,D:k.D,Y:k.Y,B:k.B,sebep:k.sebep}))}));
-  const p={t:'BIYOPAKET',v:1,tarih:bugun(),ad:DB.ad,kocTel:tel(DB.tel),logo:$('pLogo').checked?DB.logo:null,
-    ogrenci:{id:o.id,ad:o.ad,sinif:o.sinif,hedef:o.hedef},odevler:od};
-  $('pOut').value='BIYOPAKET1:'+b64e(JSON.stringify(p));
-  toast('Paket hazır. Kopyala ve öğrenciye gönder.');
+  let od=DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi);
+  if($('pSadece').checked)od=od.filter(x=>x.kalemler.some(k=>k.durum!=='ok'));
+  if(!od.length){toast('Gönderilecek ödev yok. Önce Ödev ver sekmesinden ata.');return;}
+  const p={v:2,a:DB.ad,t:tel(DB.tel),kp:(DB.kocPanelUrl||'').split('#')[0],du:DB.driveUrl||'',
+    o:{i:o.id,n:o.ad,s:o.sinif,h:o.hedef||''},
+    d:od.map(x=>({i:x.id,v:x.verilis,t:x.teslim,
+      k:x.kalemler.map(k=>({i:k.testId,a:k.ad,l:kisaLink(k.link),u:k.unite,o:k.konu,s:k.soru||0}))}))};
+  const kod='P1:'+b64u(JSON.stringify(p));
+  const base=(DB.ogrPanelUrl||'').trim().split('#')[0];
+  const testSay=od.reduce((a,x)=>a+x.kalemler.length,0);
+  if(base){
+    const link=base+'#'+kod;
+    $('pOut').value=link;
+    $('pDurum').innerHTML=`<p class="hint" style="margin-top:9px">${od.length} ödev · ${testSay} test · bağlantı ${link.length} karakter${link.length>4000?' <b style="color:var(--warn)">— uzun, WhatsApp bozabilir. "Sadece tamamlanmamış" kutusunu işaretle.</b>':''}</p>`;
+    toast('Tıklanabilir bağlantı hazır.');
+  }else{
+    $('pOut').value=kod;
+    $('pDurum').innerHTML='<div class="empty" style="margin-top:10px"><b>Panel adresi girilmemiş</b>Ayarlar sekmesine öğrenci panelinin adresini yazarsan bağlantı tıklanabilir olur. Şimdilik metin üretildi, öğrenci elle yapıştırmalı.</div>';
+    toast('Metin paketi hazır. Ayarlar\'dan panel adresini girersen tıklanabilir olur.');
+  }
 }
 function kopyala(id){const t=$(id);if(!t.value){toast('Önce paketi oluştur.');return;}t.select();navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>document.execCommand('copy'));}
 function waGonder(){
   if(!$('pOut').value){toast('Önce paketi oluştur.');return;}
   const o=DB.ogrenciler.find(x=>x.id===$('pOgr').value);
-  const msg=`${o.ad}, bu haftanın biyoloji ödevi hazır.\n\n1) Öğrenci panelini aç\n2) "Paket yükle" sekmesine aşağıdaki metnin tamamını yapıştır\n\n${$('pOut').value}`;
+  const v=$('pOut').value;
+  const link=v.startsWith('http');
+  const msg=link
+    ? `${o.ad}, bu haftanın biyoloji ödevi hazır. Bağlantıya dokun, ödevlerin panelinde açılacak.\n\n${v}`
+    : `${o.ad}, bu haftanın biyoloji ödevi hazır.\n\n1) Panelini aç\n2) "Paket yükle" sekmesine aşağıdaki metnin tamamını yapıştır\n\n${v}`;
   const n=tel(o.tel);
   if(!n)toast('Bu öğrencinin numarası kayıtlı değil — WhatsApp kişi seçme ekranı açılacak.');
   window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
 }
 let bekleyenRapor=null;
+function raporCoz(raw){
+  raw=(raw||'').trim();
+  const i=raw.indexOf('R1:');
+  if(i>=0)return JSON.parse(b64ud(raw.slice(i+3)));
+  if(raw.startsWith('BIYORAPOR1:'))return JSON.parse(b64d(raw.slice(11)));
+  throw new Error('bicim');
+}
 function raporOnizle(){
   const raw=$('rIn').value.trim();
-  if(!raw.startsWith('BIYORAPOR1:')){$('rOut').innerHTML='<div class="empty"><b>Bu bir rapor metni değil</b>BIYORAPOR1: ile başlayan metnin tamamını yapıştır.</div>';return;}
-  let r;try{r=JSON.parse(b64d(raw.slice(11)));}catch(e){$('rOut').innerHTML='<div class="empty"><b>Rapor okunamadı</b>Metin eksik kopyalanmış olabilir, tekrar iste.</div>';return;}
+  let r;try{r=raporCoz(raw);}catch(e){$('rOut').innerHTML='<div class="empty"><b>Rapor okunamadı</b>Öğrencinin gönderdiği bağlantının ya da metnin tamamını yapıştır.</div>';return;}
+  r.ogrenciId=r.ogrenciId||r.oi; r.ogrenciAd=r.ogrenciAd||r.on; r.tarih=r.tarih||r.g;
   const o=DB.ogrenciler.find(x=>x.id===r.ogrenciId)||DB.ogrenciler.find(x=>nrm(x.ad)===nrm(r.ogrenciAd));
   if(!o){$('rOut').innerHTML='<div class="empty"><b>Öğrenci eşleşmedi</b>Rapor '+esc(r.ogrenciAd||'')+' adına gelmiş ama panelde böyle bir öğrenci yok.</div>';return;}
+  r.sonuclar=r.sonuclar||r.s.map(x=>({odevId:x.o,testId:x.t,D:x.d,Y:x.y,B:x.b,sebep:x.k||'',tarih:x.g}));
   bekleyenRapor={r,oid:o.id};
   const sat=r.sonuclar.map(s=>{
     const od=DB.odevler.find(x=>x.id===s.odevId&&x.ogrenciId===o.id);
@@ -743,6 +794,10 @@ function raporOnizle(){
     <td>${k?(k.durum==='ok'?'<span class="pill p-warn">üzerine yazılacak</span>':'<span class="pill p-ok">yeni</span>'):'<span class="pill p-bad">bulunamadı</span>'}</td></tr>`;}).join('');
   $('rOut').innerHTML=`<div style="margin-top:12px"><b>${esc(o.ad)}</b> · ${esc(r.tarih)} · ${r.sonuclar.length} sonuç
     <table style="margin-top:9px"><thead><tr><th>Test</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Sebep</th><th>Durum</th></tr></thead><tbody>${sat}</tbody></table>
+    ${(r.e&&r.e.length)?`<div style="margin-top:16px"><b>Kendi çözdükleri (${r.e.length})</b>
+      <table style="margin-top:8px"><thead><tr><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Sebep</th></tr></thead><tbody>`+
+      r.e.map(x=>`<tr><td>${esc(x.a)}</td><td>${esc(x.o)}</td><td class="mono">${x.d}</td><td class="mono">${x.y}</td><td class="mono">${x.b}</td>
+      <td class="mono"><b>${net(x.d,x.y)}</b></td><td>${esc(x.k)||'—'}</td></tr>`).join('')+`</tbody></table></div>`:''}
     <button class="btn" style="margin-top:10px" onclick="raporUygula()">Sonuçları işle</button></div>`;
 }
 function raporUygula(){
@@ -755,6 +810,16 @@ function raporUygula(){
     if(!k)return;
     k.D=s.D;k.Y=s.Y||0;k.B=s.B||0;k.sebep=s.sebep||'';k.durum='ok';k.tarih=s.tarih||r.tarih;n++;
   });
+  if(r.kd){const o2=DB.ogrenciler.find(x=>x.id===oid);if(o2){o2.konuDurum=r.kd;o2.konuTarih=r.tarih||bugun();}}
+  if(r.e&&r.e.length){
+    let od=DB.odevler.find(x=>x.ogrenciId===oid&&x.kendi);
+    if(!od){od={id:'kendi_'+oid,ogrenciId:oid,verilis:r.tarih||bugun(),teslim:'',kendi:true,kalemler:[]};DB.odevler.push(od);}
+    r.e.forEach(x=>{
+      let k=od.kalemler.find(y=>y.testId===x.i);
+      if(!k){k={testId:x.i,ad:x.a,link:'',unite:x.u,konu:x.o,soru:0};od.kalemler.push(k);}
+      k.D=x.d;k.Y=x.y||0;k.B=x.b||0;k.sebep=x.k||'';k.durum='ok';k.tarih=x.g||r.tarih;n++;
+    });
+  }
   kaydet();bekleyenRapor=null;$('rIn').value='';$('rOut').innerHTML='';navCiz();
   toast(n+' test sonucu işlendi.');
   $('takipOgr').value=oid;git('takip');
@@ -766,7 +831,7 @@ function logoCiz(){
   $('brandName').textContent=DB.ad||'Biyoser';
   document.title=(DB.ad||'Biyoser')+' · Özel Ders Koç Paneli';
 }
-function ayarKaydet(){DB.ad=$('aAd').value.trim()||'Biyoser';DB.tel=$('aTel').value.trim();kaydet();logoCiz();toast('Kaydedildi.');}
+function ayarKaydet(){DB.ad=$('aAd').value.trim()||'Biyoser';DB.tel=$('aTel').value.trim();DB.ogrPanelUrl=$('aOgrUrl').value.trim();DB.kocPanelUrl=$('aKocUrl').value.trim();kaydet();logoCiz();toast('Kaydedildi.');}
 $('aLogo').onchange=e=>{
   const f=e.target.files[0];if(!f)return;
   if(f.size>400*1024){toast('Logo 400 KB\'tan küçük olmalı — paket şişmesin.');return;}
@@ -785,14 +850,24 @@ $('yFile').onchange=e=>{
 function hepsiniSil(){if(!confirm('Tüm öğrenciler, katalog ve ödevler silinecek. Emin misin?'))return;localStorage.removeItem(KEY);DB=yukle();basla();toast('Silindi.');}
 
 /* ---------- başlat ---------- */
+function hashOku(){
+  const h=decodeURIComponent(location.hash||'');
+  if(h.indexOf('R1:')<0)return;
+  $('rIn').value=h.replace(/^#/,'');
+  history.replaceState(null,'',location.pathname+location.search);
+  git('paket');raporOnizle();
+  toast('Öğrenciden rapor geldi. Aşağıda önizleme var.');
+}
 function basla(){
   const sn=Object.keys(AGAC).map(s=>`<option>${esc(s)}</option>`).join('');
   $('kSinif').innerHTML=sn;$('tSinif').innerHTML=sn;
   agacDoldur();
   $('aAd').value=DB.ad||'Biyoser';
   $('aTel').value=DB.tel||'';
+  $('aOgrUrl').value=DB.ogrPanelUrl||'';
+  $('aKocUrl').value=DB.kocPanelUrl||(location.origin+location.pathname);
   $('dUrl').value=DB.driveUrl||'';
-  logoCiz();navCiz();ogrCiz();ogrSecDoldur();katalogCiz();odevCiz();takipCiz();
+  logoCiz();navCiz();ogrCiz();ogrSecDoldur();katalogCiz();odevCiz();takipCiz();hashOku();
 }
 basla();
 </script>
