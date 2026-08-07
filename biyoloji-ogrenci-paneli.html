@@ -233,7 +233,9 @@ const AGAC={
   'Canlılarda Enerji Dönüşümleri':['Canlılık ve Enerji','Fotosentez','Kemosentez','Hücresel Solunum','Fermantasyon'],
   'Bitki Biyolojisi':['Bitkilerin Yapısı','Bitkilerde Madde Taşınması','Bitkilerde Eşeyli Üreme','Bitkilerde Hareket ve Uyarılma'],
   'Canlılar ve Çevre':['Canlılar ve Çevre İlişkileri']},
- 'Karma / Deneme':{'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Deneme']}
+ 'Karma / Deneme':{
+  'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Ünite Karma Tekrar'],
+  'Deneme':['TYT Biyoloji Denemesi','AYT Biyoloji Denemesi','Branş Denemesi']}
 };
 
 const SURE={
@@ -267,7 +269,7 @@ const SEBEPLER=['','Bilmiyordum','Yanlış okudum','Dikkatsizlik','Zaman yetmedi
 
 let S=yukle();
 function yukle(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {logo:null,ad:'Biyoser',kocTel:'',kocPanel:'',driveUrl:'',kutuphane:[],kutupTarih:'',konuDurum:{},ogrenci:null,odevler:[],ekstra:[]};}
+  return {logo:null,ad:'Biyoser',kocTel:'',kocPanel:'',driveUrl:'',kutuphane:[],kutupTarih:'',konuDurum:{},sure:{},ogrenci:null,odevler:[],ekstra:[]};}
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(S));}
 
 const SAYFALAR=[['odev','Ödevlerim'],['kutup','Test kütüphanesi'],['konu','Konu takibi'],['ekle','Kendim çözdüm'],['ilerleme','İlerleme'],['rapor','Rapor gönder'],['ayarlar','Ayarlar']];
@@ -292,7 +294,7 @@ function paketCoz(raw){
   const i=raw.indexOf('P1:');
   if(i>=0){
     const q=JSON.parse(b64ud(raw.slice(i+3)));
-    return {ad:q.a,kocTel:q.t,kocPanel:q.kp||'',driveUrl:q.du||'',logo:null,
+    return {ad:q.a,kocTel:q.t,kocPanel:q.kp||'',driveUrl:q.du||'',sure:q.su||null,logo:null,
       ogrenci:{id:q.o.i,ad:q.o.n,sinif:q.o.s,hedef:q.o.h},
       odevler:q.d.map(x=>({id:x.i,verilis:x.v,teslim:x.t,
         kalemler:x.k.map(k=>({testId:k.i,ad:k.a,link:acLink(k.l),unite:k.u,konu:k.o,soru:k.s,durum:'bekliyor',D:null,Y:null,B:null,sebep:''}))}))};
@@ -304,7 +306,7 @@ function paketYukle(kaynak){
   const raw=(typeof kaynak==='string'?kaynak:$('pIn').value).trim();
   let p;try{p=paketCoz(raw);}catch(e){toast('Bu bir ödev paketi değil. Öğretmeninin gönderdiği bağlantının tamamını yapıştır.');return;}
   if(S.ogrenci&&S.ogrenci.id!==p.ogrenci.id&&!confirm('Bu ödev '+p.ogrenci.ad+' adına. Mevcut kayıtların değişecek. Devam?'))return;
-  S.ogrenci=p.ogrenci; S.ad=p.ad||S.ad; if(p.logo)S.logo=p.logo; if(p.kocTel)S.kocTel=p.kocTel; if(p.kocPanel)S.kocPanel=p.kocPanel; if(p.driveUrl)S.driveUrl=p.driveUrl;
+  S.ogrenci=p.ogrenci; S.ad=p.ad||S.ad; if(p.logo)S.logo=p.logo; if(p.kocTel)S.kocTel=p.kocTel; if(p.kocPanel)S.kocPanel=p.kocPanel; if(p.driveUrl)S.driveUrl=p.driveUrl; if(p.sure)S.sure=p.sure;
   p.odevler.forEach(yeni=>{
     const eski=S.odevler.find(o=>o.id===yeni.id);
     if(!eski){S.odevler.push(yeni);return;}
@@ -400,7 +402,10 @@ function ilerlemeCiz(){
   const konu={};kal.forEach(k=>{const c=konu[k.konu||'—']=konu[k.konu||'—']||{D:0,Y:0,B:0};c.D+=k.D;c.Y+=k.Y||0;c.B+=k.B||0;});
   const sirali=Object.entries(konu).map(([k,c])=>({k,oran:(c.D+c.Y+c.B)?Math.round(c.D/(c.D+c.Y+c.B)*100):0,...c})).sort((a,b)=>a.oran-b.oran);
   const sebep={};kal.forEach(k=>{if(k.sebep)sebep[k.sebep]=(sebep[k.sebep]||0)+1;});
-  $('ilerlemeOut').innerHTML=`
+  const dk=S.odevler.flatMap(o=>o.kalemler).filter(k=>k.durum==='ok').concat((S.ekstra||[]).map(x=>({unite:x.unite,konu:x.konu,D:x.D,Y:x.Y,tarih:x.tarih,ad:x.ad})));
+  const ds=denemeSeri(dk);
+  const dHtml=(ds.TYT.length||ds.AYT.length)?`<div class="card"><h3>Deneme netlerin</h3>${grafikSVG(ds)}</div>`:'';
+  $('ilerlemeOut').innerHTML=dHtml+`
   <div class="card"><h3>Genel</h3>
     <div class="sonuc" style="padding:8px 0 0">
       <span>Çözülen test <b>${kal.length}</b></span><span>Doğru <b>${D}</b></span><span>Yanlış <b>${Y}</b></span>
@@ -470,10 +475,54 @@ function ekstraSil(id){
 }
 function tumKalemler(){
   const a=S.odevler.flatMap(o=>o.kalemler).filter(k=>k.durum==='ok');
-  const b=(S.ekstra||[]).map(x=>({ad:x.ad,konu:x.konu,D:x.D,Y:x.Y,B:x.B,sebep:x.sebep,tarih:x.tarih}));
+  const b=(S.ekstra||[]).map(x=>({ad:x.ad,unite:x.unite,konu:x.konu,D:x.D,Y:x.Y,B:x.B,sebep:x.sebep,tarih:x.tarih}));
   return a.concat(b);
 }
 
+
+function denemeSeri(kalemler){
+  const s={TYT:[],AYT:[]};
+  kalemler.forEach(k=>{
+    if((k.unite||'')!=='Deneme'||k.D==null)return;
+    const tip=/TYT/i.test(k.konu||'')?'TYT':(/AYT/i.test(k.konu||'')?'AYT':'AYT');
+    s[tip].push({t:k.tarih||'',n:net(k.D,k.Y),a:k.ad||''});
+  });
+  s.TYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  s.AYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  return s;
+}
+function grafikSVG(s){
+  const hepsi=[...s.TYT,...s.AYT];
+  if(!hepsi.length)return '';
+  const W=680,H=230,L=36,R=14,T=14,B=30;
+  const tarih=[...new Set(hepsi.map(x=>x.t))].sort();
+  const maxN=Math.max(4,Math.ceil(Math.max(...hepsi.map(x=>x.n))));
+  const X=t=>L+(tarih.length>1?tarih.indexOf(t)/(tarih.length-1):0.5)*(W-L-R);
+  const Y=n=>H-B-(n/maxN)*(H-T-B);
+  const renk={TYT:'#186C68',AYT:'#B0710A'};
+  let g='';
+  for(let i=0;i<=4;i++){const v=maxN*i/4,y=Y(v);
+    g+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#E2E9EC" stroke-width="1"/>`+
+       `<text x="${L-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#7E939F">${Math.round(v*10)/10}</text>`;}
+  ['TYT','AYT'].forEach(k=>{
+    const d=s[k];if(!d.length)return;
+    if(d.length>1)g+=`<polyline fill="none" stroke="${renk[k]}" stroke-width="2.2" stroke-linejoin="round"
+      points="${d.map(x=>X(x.t)+','+Y(x.n)).join(' ')}"/>`;
+    d.forEach(x=>{g+=`<circle cx="${X(x.t)}" cy="${Y(x.n)}" r="4" fill="${renk[k]}"><title>${k} · ${x.n} net · ${x.t}</title></circle>`;});
+  });
+  tarih.forEach((t,i)=>{
+    if(tarih.length>7&&i%Math.ceil(tarih.length/6)!==0&&i!==tarih.length-1)return;
+    g+=`<text x="${X(t)}" y="${H-9}" text-anchor="middle" font-size="10" fill="#7E939F">${(t||'').slice(8,10)+'.'+(t||'').slice(5,7)}</text>`;});
+  const ort=k=>s[k].length?(s[k].reduce((a,x)=>a+x.n,0)/s[k].length).toFixed(1):'—';
+  const son=k=>s[k].length?s[k][s[k].length-1].n:'—';
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;margin-top:8px">
+    <span><b style="color:${renk.TYT}">●</b> TYT · ${s.TYT.length} deneme · ort ${ort('TYT')} · son ${son('TYT')}</span>
+    <span><b style="color:${renk.AYT}">●</b> AYT · ${s.AYT.length} deneme · ort ${ort('AYT')} · son ${son('AYT')}</span>
+  </div>`;
+}
+
+function sr(k){return (S.sure&&S.sure[k]!=null)?S.sure[k]:(SURE[k]||2);}
 
 /* ---------- test kütüphanesi ---------- */
 async function kutupCek(){
@@ -536,7 +585,7 @@ function konuCiz(){
   let tS=0,bS=0,iS=0;
   Object.keys(AGAC).filter(x=>x!=='Karma / Deneme').forEach(sn=>{
     Object.values(AGAC[sn]).flat().forEach(k=>{
-      const h=SURE[k]||2;tS+=h;
+      const h=sr(k);tS+=h;
       const d=S.konuDurum[k];
       if(d==='b')bS+=h; else if(d==='i')iS+=h;
     });
@@ -548,13 +597,13 @@ function konuCiz(){
   $('konuBar').style.width=(tS?bS/tS*100:0)+'%';
   const sn=sel.value;
   $('konuList').innerHTML=Object.entries(AGAC[sn]||{}).map(([u,kk])=>{
-    const top=kk.reduce((a,k)=>a+(SURE[k]||2),0);
-    const bit=kk.filter(k=>S.konuDurum[k]==='b').reduce((a,k)=>a+(SURE[k]||2),0);
+    const top=kk.reduce((a,k)=>a+sr(k),0);
+    const bit=kk.filter(k=>S.konuDurum[k]==='b').reduce((a,k)=>a+sr(k),0);
     return `<div class="grp"><div class="grp-h">${esc(u)}<span class="n">${bit}/${top} sa</span></div>`+
       kk.map(k=>{
         const d=S.konuDurum[k]||'g';
         return `<div class="itm"><div class="ad">${esc(k)}
-          <span style="display:block;font-size:11.5px;color:var(--ink-3)">${SURE[k]||2} saatlik çalışma</span></div>
+          <span style="display:block;font-size:11.5px;color:var(--ink-3)">${sr(k)} saatlik çalışma</span></div>
           <div class="ktrio">`+
           ['b','i','g'].map(v=>`<button data-v="${v}" class="${d===v?'on':''}" onclick="konuSet('${esc(k).replace(/'/g,"&#39;")}','${v}')">${DURUM[v]}</button>`).join('')+
           `</div></div>`;

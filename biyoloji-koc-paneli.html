@@ -61,6 +61,16 @@ tr:hover td{background:#F7FAFA}
 .empty{text-align:center;padding:34px 16px;color:var(--ink-3);border:1px dashed var(--line);border-radius:9px;background:#fff}
 .empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:4px}
 .mono{font-family:var(--mono);font-size:12.5px}
+.knz{border:1px solid var(--line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.knz-h{background:#F2F6F7;padding:7px 11px;font-weight:700;font-size:12px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.knz-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11px}
+.knz-r{display:flex;gap:9px;align-items:center;padding:6px 11px;border-top:1px solid var(--line-soft)}
+.knz-r .ad{flex:1;min-width:0;font-size:13px}
+.dot{width:13px;height:13px;border-radius:50%;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.dot.b{background:var(--ok);box-shadow:0 0 0 1px var(--ok)}
+.dot.i{background:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.dot.g{background:#E5EBEE}
+.knz-r input{width:58px;padding:3px 6px;font-size:12px;text-align:center;flex:none}
 .hint{font-size:12px;color:var(--ink-3);margin-top:5px}
 .toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:#fff;padding:11px 16px;border-radius:8px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.22);max-width:340px}
 .warnbar{background:var(--bad);color:#fff;padding:9px 14px;font-weight:600;font-size:13px}
@@ -175,6 +185,7 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
           <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end;gap:8px">
             <button class="btn" onclick="topluEkle()">Satırları ekle</button>
             <button class="btn ghost" onclick="katalogDisaAktar()">Katalogu dışa aktar</button>
+            <button class="btn danger" onclick="katalogTemizle()">Katalogu temizle</button>
           </div>
         </div>
       </div>
@@ -358,14 +369,77 @@ const AGAC={
   'Canlılarda Enerji Dönüşümleri':['Canlılık ve Enerji','Fotosentez','Kemosentez','Hücresel Solunum','Fermantasyon'],
   'Bitki Biyolojisi':['Bitkilerin Yapısı','Bitkilerde Madde Taşınması','Bitkilerde Eşeyli Üreme','Bitkilerde Hareket ve Uyarılma'],
   'Canlılar ve Çevre':['Canlılar ve Çevre İlişkileri']},
- 'Karma / Deneme':{'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Deneme']}
+ 'Karma / Deneme':{
+  'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Ünite Karma Tekrar'],
+  'Deneme':['TYT Biyoloji Denemesi','AYT Biyoloji Denemesi','Branş Denemesi']}
 };
+
+const SURE={
+'Biyoloji ve Canlıların Ortak Özellikleri':2,'İnorganik Bileşikler (Su, Mineral, Asit-Baz-Tuz)':3,
+'Karbonhidratlar':2,'Lipitler':2,'Proteinler':2,'Enzimler':3,'Hormonlar':1,'Vitaminler':2,'Nükleik Asitler ve ATP':3,
+'Hücre Teorisi ve Hücrenin Yapısı':2,'Organeller':4,'Çekirdek':1,'Hücre Zarından Madde Geçişi':5,
+'Canlıların Sınıflandırılması':2,'Bakteriler':3,'Arkeler':1,'Protistalar':2,'Mantarlar':2,'Bitkiler':2,'Hayvanlar':3,'Virüsler':2,
+'Mitoz':3,'Eşeysiz Üreme':2,'Mayoz':4,'Eşeyli Üreme':2,
+'Mendel İlkeleri':5,'Eşeye Bağlı Kalıtım':3,'Kan Grupları':2,'Soyağacı':3,'Genetik Uygulamalar':2,
+'Ekosistemin Yapısı':2,'Enerji Akışı ve Besin Zinciri':3,'Madde Döngüleri':3,'Güncel Çevre Sorunları':1,
+'Sinir Sistemi':6,'Endokrin Sistem':4,'Duyu Organları':4,'Kemik ve İskelet':3,'Kaslar':3,
+'Sindirim Organları':3,'Sindirim Enzimleri ve Emilim':3,'Kalp ve Damarlar':4,'Kan':3,'Lenf Sistemi':1,'Bağışıklık':3,
+'Solunum Organları':2,'Gaz Değişimi ve Taşınması':3,'Boşaltım ve Nefron':3,'İdrar Oluşumu':3,
+'Üreme Sistemi':3,'Embriyonik Gelişim':3,'Komünite Ekolojisi':3,'Süksesyon':1,'Popülasyon Ekolojisi':3,
+'Nükleik Asitler ve DNA Replikasyonu':4,'Genetik Şifre ve Protein Sentezi':5,'Genetik Mühendisliği ve Biyoteknoloji':2,
+'Canlılık ve Enerji':2,'Fotosentez':6,'Kemosentez':1,'Hücresel Solunum':6,'Fermantasyon':2,
+'Bitkilerin Yapısı':4,'Bitkilerde Madde Taşınması':4,'Bitkilerde Eşeyli Üreme':3,'Bitkilerde Hareket ve Uyarılma':2,
+'Canlılar ve Çevre İlişkileri':2};
+
+function denemeSeri(kalemler){
+  const s={TYT:[],AYT:[]};
+  kalemler.forEach(k=>{
+    if((k.unite||'')!=='Deneme'||k.D==null)return;
+    const tip=/TYT/i.test(k.konu||'')?'TYT':(/AYT/i.test(k.konu||'')?'AYT':'AYT');
+    s[tip].push({t:k.tarih||'',n:net(k.D,k.Y),a:k.ad||''});
+  });
+  s.TYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  s.AYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  return s;
+}
+function grafikSVG(s){
+  const hepsi=[...s.TYT,...s.AYT];
+  if(!hepsi.length)return '';
+  const W=680,H=230,L=36,R=14,T=14,B=30;
+  const tarih=[...new Set(hepsi.map(x=>x.t))].sort();
+  const maxN=Math.max(4,Math.ceil(Math.max(...hepsi.map(x=>x.n))));
+  const X=t=>L+(tarih.length>1?tarih.indexOf(t)/(tarih.length-1):0.5)*(W-L-R);
+  const Y=n=>H-B-(n/maxN)*(H-T-B);
+  const renk={TYT:'#186C68',AYT:'#B0710A'};
+  let g='';
+  for(let i=0;i<=4;i++){const v=maxN*i/4,y=Y(v);
+    g+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#E2E9EC" stroke-width="1"/>`+
+       `<text x="${L-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#7E939F">${Math.round(v*10)/10}</text>`;}
+  ['TYT','AYT'].forEach(k=>{
+    const d=s[k];if(!d.length)return;
+    if(d.length>1)g+=`<polyline fill="none" stroke="${renk[k]}" stroke-width="2.2" stroke-linejoin="round"
+      points="${d.map(x=>X(x.t)+','+Y(x.n)).join(' ')}"/>`;
+    d.forEach(x=>{g+=`<circle cx="${X(x.t)}" cy="${Y(x.n)}" r="4" fill="${renk[k]}"><title>${k} · ${x.n} net · ${x.t}</title></circle>`;});
+  });
+  tarih.forEach((t,i)=>{
+    if(tarih.length>7&&i%Math.ceil(tarih.length/6)!==0&&i!==tarih.length-1)return;
+    g+=`<text x="${X(t)}" y="${H-9}" text-anchor="middle" font-size="10" fill="#7E939F">${(t||'').slice(8,10)+'.'+(t||'').slice(5,7)}</text>`;});
+  const ort=k=>s[k].length?(s[k].reduce((a,x)=>a+x.n,0)/s[k].length).toFixed(1):'—';
+  const son=k=>s[k].length?s[k][s[k].length-1].n:'—';
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;margin-top:8px">
+    <span><b style="color:${renk.TYT}">●</b> TYT · ${s.TYT.length} deneme · ort ${ort('TYT')} · son ${son('TYT')}</span>
+    <span><b style="color:${renk.AYT}">●</b> AYT · ${s.AYT.length} deneme · ort ${ort('AYT')} · son ${son('AYT')}</span>
+  </div>`;
+}
+
+function sr(k){return (DB.sure&&DB.sure[k]!=null)?DB.sure[k]:(SURE[k]||2);}
 
 /* ---------- veri ---------- */
 let DB=yukle();
 function yukle(){
   try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {v:VER,logo:null,ad:'Biyoser',tel:'',ogrPanelUrl:'',kocPanelUrl:'',driveUrl:'',ogrenciler:[],katalog:[],odevler:[]};
+  return {v:VER,logo:null,ad:'Biyoser',tel:'',ogrPanelUrl:'',kocPanelUrl:'',driveUrl:'',sure:{},ogrenciler:[],katalog:[],odevler:[]};
 }
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(DB));}
 
@@ -628,6 +702,14 @@ function adUygula(){
   toast(n+' test doğru konuya taşındı.');
 }
 
+function katalogTemizle(){
+  if(!DB.katalog.length){toast('Katalog zaten boş.');return;}
+  const n=DB.katalog.length;
+  if(!confirm(n+' test katalogdan silinecek. Verilen ödevler ve sonuçlar etkilenmez.\n\nDevam edilsin mi?'))return;
+  if(!confirm('Emin misin? Bu işlem geri alınamaz.\n\nDrive köprünü kullanarak yeniden çekebilirsin.'))return;
+  DB.katalog=[];secili.clear();kaydet();katalogCiz();odevCiz();navCiz();
+  toast(n+' test silindi. Katalog boş.');
+}
 function katalogDisaAktar(){
   const txt=DB.katalog.map(t=>[t.unite,t.konu,t.ad,t.link,t.soru].join(' | ')).join('\n');
   indir('test-katalogu.txt',txt,'text/plain');
@@ -681,6 +763,70 @@ function odevOlustur(){
 }
 
 /* ---------- takip ---------- */
+
+/* ---------- deneme grafiği ---------- */
+function denemeKart(od){
+  const kal=od.flatMap(x=>x.kalemler).filter(k=>k.durum==='ok');
+  const s=denemeSeri(kal);
+  if(!s.TYT.length&&!s.AYT.length)return '';
+  return `<div class="card"><h3>Deneme netleri</h3>${grafikSVG(s)}</div>`;
+}
+
+/* ---------- konu haznesi ---------- */
+const DURUMAD={b:'Bitti',i:'İşliyorum',g:'Görmedim'};
+function konuHazne(oid){
+  const o=DB.ogrenciler.find(x=>x.id===oid);if(!o)return '';
+  o.konuDurum=o.konuDurum||{};
+  const sinif=Object.keys(AGAC).filter(x=>x!=='Karma / Deneme');
+  let tS=0,bS=0,iS=0,tN=0,bN=0;
+  sinif.forEach(sn=>Object.values(AGAC[sn]).flat().forEach(k=>{
+    const h=sr(k);tS+=h;tN++;const d=o.konuDurum[k];
+    if(d==='b'){bS+=h;bN++;}else if(d==='i')iS+=h;}));
+  const yuzde=tS?Math.round(bS/tS*100):0;
+  let g=`<div class="card"><h3>Konu haznesi
+    <span class="hint" style="float:right;text-transform:none;letter-spacing:0">güncelleme ${trh(o.konuTarih)}</span></h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;margin-bottom:10px">
+      <span>Tamamlanma<b style="display:block;font-size:22px" class="mono">%${yuzde}</b></span>
+      <span>Biten konu<b style="display:block;font-size:18px" class="mono">${bN}/${tN}</b></span>
+      <span>Toplam süre<b style="display:block;font-size:18px" class="mono">${tS} sa</b></span>
+      <span>Biten<b style="display:block;font-size:18px" class="mono">${bS} sa</b></span>
+      <span>İşlenen<b style="display:block;font-size:18px" class="mono">${iS} sa</b></span>
+      <span>Kalan<b style="display:block;font-size:18px;color:var(--bad)" class="mono">${tS-bS} sa</b></span>
+    </div>
+    <div style="height:9px;background:var(--line-soft);border-radius:5px;overflow:hidden;margin-bottom:14px">
+      <i style="display:block;height:100%;width:${yuzde}%;background:var(--ok)"></i></div>
+    <p class="hint" style="margin-bottom:11px">Daireye tıklayarak durumu değiştir (bitti → işliyorum → görmedim). Sağdaki kutudan konunun süresini düzenle — süre tüm öğrenciler için ortaktır ve pakete eklenir.</p>`;
+  sinif.forEach(sn=>{
+    g+=`<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:14px 0 7px">${esc(sn)}</div>`;
+    Object.entries(AGAC[sn]).forEach(([u,kk])=>{
+      const top=kk.reduce((a,k)=>a+sr(k),0), bit=kk.filter(k=>o.konuDurum[k]==='b').reduce((a,k)=>a+sr(k),0);
+      g+=`<div class="knz"><div class="knz-h">${esc(u)}<span class="n">${bit}/${top} sa</span></div>`+
+        kk.map(k=>{const d=o.konuDurum[k]||'g';
+          const ke=esc(k).replace(/'/g,'&#39;');
+          return `<div class="knz-r">
+            <span class="dot ${d}" title="${DURUMAD[d]}" onclick="konuCevir('${oid}','${ke}')"></span>
+            <span class="ad">${esc(k)}</span>
+            <input type="number" min="0" max="99" value="${sr(k)}" onchange="sureSet('${ke}',this.value)" title="saat">
+            <span class="hint" style="flex:none">sa</span></div>`;}).join('')+`</div>`;
+    });
+  });
+  return g+'</div>';
+}
+function konuCevir(oid,k){
+  const o=DB.ogrenciler.find(x=>x.id===oid);if(!o)return;
+  o.konuDurum=o.konuDurum||{};
+  const s={g:'i',i:'b',b:'g'};
+  const y=s[o.konuDurum[k]||'g'];
+  if(y==='g')delete o.konuDurum[k]; else o.konuDurum[k]=y;
+  kaydet();takipCiz();
+}
+function sureSet(k,v){
+  DB.sure=DB.sure||{};
+  const n=Math.max(0,Math.min(99,+v||0));
+  if(n===(SURE[k]||2))delete DB.sure[k]; else DB.sure[k]=n;
+  kaydet();takipCiz();
+}
+
 function takipCiz(){
   const oid=$('takipOgr').value, out=$('takipOut');
   if(!oid){out.innerHTML='<div class="empty"><b>Öğrenci yok</b>Önce Öğrenciler sekmesinden ekle.</div>';return;}
@@ -693,15 +839,8 @@ function takipCiz(){
   const sirali=Object.entries(konu).map(([k,c])=>{
     const t=c.D+c.Y+c.B;return {k,oran:t?Math.round(c.D/t*100):0,t,...c};}).sort((a,b)=>a.oran-b.oran);
   let html='';
-  const kd=(DB.ogrenciler.find(x=>x.id===oid)||{}).konuDurum;
-  if(kd&&Object.keys(kd).length){
-    const bit=Object.entries(kd).filter(x=>x[1]==='b').map(x=>x[0]);
-    const isl=Object.entries(kd).filter(x=>x[1]==='i').map(x=>x[0]);
-    html+=`<div class="card" style="border-color:var(--accent-2)"><h3>Konu takibi
-      <span class="hint" style="float:right;text-transform:none;letter-spacing:0">güncelleme ${trh((DB.ogrenciler.find(x=>x.id===oid)||{}).konuTarih)}</span></h3>
-      <div style="font-size:13px"><b style="color:var(--ok)">Bitti (${bit.length}):</b> ${bit.map(esc).join(', ')||'—'}</div>
-      <div style="font-size:13px;margin-top:7px"><b style="color:var(--warn)">İşliyorum (${isl.length}):</b> ${isl.map(esc).join(', ')||'—'}</div></div>`;
-  }
+  html+=denemeKart(od);
+  html+=konuHazne(oid);
   if(sirali.length){
     html+='<div class="card"><h3>Konu bazlı başarı (en zayıftan)</h3><table><thead><tr><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Doğru %</th><th>Net</th></tr></thead><tbody>'+
       sirali.map(c=>`<tr><td>${esc(c.k)}</td><td class="mono">${c.D}</td><td class="mono">${c.Y}</td><td class="mono">${c.B}</td>
@@ -739,7 +878,7 @@ function paketUret(){
   let od=DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi);
   if($('pSadece').checked)od=od.filter(x=>x.kalemler.some(k=>k.durum!=='ok'));
   if(!od.length){toast('Gönderilecek ödev yok. Önce Ödev ver sekmesinden ata.');return;}
-  const p={v:2,a:DB.ad,t:tel(DB.tel),kp:(DB.kocPanelUrl||'').split('#')[0],du:DB.driveUrl||'',
+  const p={v:2,a:DB.ad,t:tel(DB.tel),kp:(DB.kocPanelUrl||'').split('#')[0],du:DB.driveUrl||'',su:DB.sure||{},
     o:{i:o.id,n:o.ad,s:o.sinif,h:o.hedef||''},
     d:od.map(x=>({i:x.id,v:x.verilis,t:x.teslim,
       k:x.kalemler.map(k=>({i:k.testId,a:k.ad,l:kisaLink(k.link),u:k.unite,o:k.konu,s:k.soru||0}))}))};
