@@ -213,14 +213,18 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
       <div class="card">
         <div class="search-wrap">
           <input type="text" id="q" placeholder="Ünite, konu ya da test adı yaz… (boş bırakırsan hepsi listelenir)" oninput="odevCiz()">
-          <div class="qmeta"><span id="qInfo"></span><button class="btn ghost sm" onclick="secimTemizle()">Seçimi temizle</button></div>
+          <div class="qmeta"><span id="qInfo"></span>
+            <span style="display:flex;gap:12px;align-items:center">
+              <label style="margin:0;font-weight:600;color:var(--ink-2);display:flex;gap:5px;align-items:center;cursor:pointer">
+                <input type="checkbox" id="qGizle" style="width:auto" onchange="odevCiz()"> Daha önce verdiklerimi gizle</label>
+              <button class="btn ghost sm" onclick="secimTemizle()">Seçimi temizle</button></span></div>
         </div>
       </div>
       <div id="odevList"></div>
       <div class="tray" id="tray" style="display:none">
         <b id="traySay">0 test seçildi</b>
         <span class="sp"></span>
-        <select id="tOgr"></select>
+        <select id="tOgr" onchange="odevCiz()"></select>
         <input type="date" id="tTeslim">
         <button class="btn" style="background:var(--accent-2);color:#08282a" onclick="odevOlustur()">Ödevi ata</button>
       </div>
@@ -723,10 +727,32 @@ function vurgula(metin,q){
   if(i<0)return esc(metin);
   return esc(metin.slice(0,i))+'<mark>'+esc(metin.slice(i,i+q.length))+'</mark>'+esc(metin.slice(i+q.length));
 }
+function gecmis(oid){
+  const m={};
+  if(!oid)return m;
+  DB.odevler.filter(x=>x.ogrenciId===oid).forEach(o=>o.kalemler.forEach(k=>{
+    const g=m[k.testId]=m[k.testId]||{kez:0,son:null,net:null,bekleyen:0};
+    g.kez++;
+    if(k.durum==='ok'){ if(!g.son||(k.tarih||'')>=g.son){g.son=k.tarih||o.verilis;g.net=net(k.D,k.Y);} }
+    else g.bekleyen++;
+  }));
+  return m;
+}
+function rozet(g){
+  if(!g)return '';
+  if(g.bekleyen)return `<span class="pill p-warn" title="Verildi ama sonucu gelmedi">verildi · bekliyor</span>`;
+  return `<span class="pill ${g.net>=g.kez*0?'p-neu':'p-neu'}" title="${g.kez} kez verildi">${g.kez}. kez · son ${g.net} net</span>`;
+}
 function odevCiz(){
   const q=nrm($('q').value);
-  const list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
-  $('qInfo').textContent = q ? `${list.length} test eşleşti` : `Tüm katalog · ${DB.katalog.length} test`;
+  const oid=($('tOgr')||{}).value||'';
+  const G=gecmis(oid);
+  const gizle=($('qGizle')||{}).checked;
+  let list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
+  const gizlenen=gizle?list.filter(t=>G[t.id]).length:0;
+  if(gizle)list=list.filter(t=>!G[t.id]);
+  $('qInfo').innerHTML = (q?`${list.length} test eşleşti`:`Tüm katalog · ${DB.katalog.length} test`)+
+    (gizlenen?` <span class="pill p-neu">${gizlenen} tanesi gizlendi</span>`:'');
   if(!DB.katalog.length){$('odevList').innerHTML='<div class="empty"><b>Önce test kataloğunu doldur</b>Ödev verebilmek için testlerin ad ve bağlantılarını kataloğa girmen gerekiyor.</div>';trayCiz();return;}
   if(!list.length){$('odevList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Farklı bir kelime dene ya da kutuyu boşalt.</div>';trayCiz();return;}
   const grup={};
@@ -739,6 +765,7 @@ function odevCiz(){
           <input type="checkbox" ${secili.has(t.id)?'checked':''} onchange="sec('${t.id}',this.checked)">
           <span class="ad">${vurgula(t.ad,q)}</span>
           <span class="sq">${t.soru?t.soru+' soru':''}</span>
+          ${rozet(G[t.id])}
           ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
         </label>`).join('')+`</div>`).join('')+`</div>`;
   }).join('');
@@ -754,6 +781,15 @@ function trayCiz(){
 function odevOlustur(){
   const oid=$('tOgr').value;
   if(!oid){toast('Önce bir öğrenci ekle.');return;}
+  const G=gecmis(oid);
+  const tekrar=[...secili].filter(id=>G[id]);
+  if(tekrar.length){
+    const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id);const g=G[id];
+      return '• '+(t?t.ad:'?')+(g.bekleyen?' (hâlâ bekliyor)':' (son: '+g.net+' net)');}).join('\n');
+    if(!confirm(tekrar.length+' test bu öğrenciye daha önce verilmişti:\n\n'+ad+
+      (tekrar.length>5?'\n…ve '+(tekrar.length-5)+' tane daha':'')+
+      '\n\nYine de gönderilsin mi? (Tekrar vermek bilinçli bir tercihse sorun yok.)'))return;
+  }
   const kalemler=[...secili].map(id=>{const t=DB.katalog.find(x=>x.id===id);
     return {testId:t.id,ad:t.ad,link:t.link,unite:t.unite,konu:t.konu,soru:t.soru,durum:'bekliyor',D:null,Y:null,B:null,sebep:'',tarih:null};});
   DB.odevler.push({id:uid(),ogrenciId:oid,verilis:bugun(),teslim:$('tTeslim').value,kalemler});
