@@ -249,6 +249,7 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
       <div class="card"><h3>1 · Öğrenciye ödev gönder</h3>
         <button class="btn" onclick="paketUret()">Bağlantıyı oluştur</button>
         <div style="margin-top:9px"><label><input type="checkbox" id="pSadece" style="width:auto" checked> Sadece tamamlanmamış ödevleri gönder (bağlantıyı kısa tutar)</label></div>
+        <div style="margin-top:5px"><label><input type="checkbox" id="pAyar" style="width:auto"> Kütüphane ve ayar bilgilerini tekrar gönder (normalde gerekmez)</label></div>
         <div id="pDurum"></div>
         <textarea id="pOut" placeholder="Tıklanabilir bağlantı burada belirecek…" style="margin-top:9px;min-height:70px"></textarea>
         <div class="row" style="margin-top:8px">
@@ -359,6 +360,50 @@ function nrm(s){return (s||'').toLocaleLowerCase('tr').replace(/[ıi̇]/g,'i').r
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function b64e(str){const b=new TextEncoder().encode(str);let s='';b.forEach(x=>s+=String.fromCharCode(x));return btoa(s);}
 function b64d(x){const b=atob(x);return new TextDecoder().decode(Uint8Array.from(b,c=>c.charCodeAt(0)));}
+function _gen(n){let g=9;while(n>((1<<g)-1)&&g<15)g++;return g;}
+function lzSik(metin){
+  const gir=new TextEncoder().encode(metin);
+  if(!gir.length)return '';
+  const soz=new Map();for(let i=0;i<256;i++)soz.set(String.fromCharCode(i),i);
+  let boy=256,w='',akis=[],tampon=0,uz=0;
+  const yaz=(v,g)=>{tampon=(tampon*Math.pow(2,g))+v;uz+=g;
+    while(uz>=8){uz-=8;const d=Math.pow(2,uz);akis.push(Math.floor(tampon/d)&255);tampon=tampon%d;}};
+  for(let i=0;i<gir.length;i++){
+    const c=String.fromCharCode(gir[i]),wc=w+c;
+    if(soz.has(wc)){w=wc;continue;}
+    yaz(soz.get(w),_gen(boy));
+    if(boy<32768)soz.set(wc,boy++);
+    w=c;
+  }
+  if(w!=='')yaz(soz.get(w),_gen(boy));
+  if(uz>0)akis.push((tampon*Math.pow(2,8-uz))&255);
+  let bin='';akis.forEach(b=>bin+=String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function lzAc(b64){
+  if(!b64)return '';
+  let s=b64.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
+  const bin=atob(s),bayt=[];for(let i=0;i<bin.length;i++)bayt.push(bin.charCodeAt(i));
+  const soz=[];for(let i=0;i<256;i++)soz.push(String.fromCharCode(i));
+  let boy=256,tampon=0,uz=0,p=0;
+  const oku=g=>{while(uz<g){if(p>=bayt.length)return null;tampon=tampon*256+bayt[p++];uz+=8;}
+    uz-=g;const d=Math.pow(2,uz),v=Math.floor(tampon/d)&((1<<g)-1);tampon=tampon%d;return v;};
+  let cikti='',onceki=null;
+  while(true){
+    const k=oku(_gen(boy+1));if(k===null)break;
+    let giris;
+    if(k<soz.length)giris=soz[k];
+    else if(k===soz.length&&onceki!==null)giris=onceki+onceki[0];
+    else break;
+    cikti+=giris;
+    if(onceki!==null&&boy<32768){soz.push(onceki+giris[0]);boy++;}
+    onceki=giris;
+  }
+  const u8=new Uint8Array(cikti.length);
+  for(let i=0;i<cikti.length;i++)u8[i]=cikti.charCodeAt(i)&255;
+  return new TextDecoder().decode(u8);
+}
+
 function b64u(s){return b64e(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
 function b64ud(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return b64d(s);}
 function kisaLink(l){const m=(l||'').match(/\/d\/([-\w]{15,})/);return m?('d:'+m[1]):(l||'');}
@@ -996,18 +1041,29 @@ function paketUret(){
   let od=DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi);
   if($('pSadece').checked)od=od.filter(x=>x.kalemler.some(k=>k.durum!=='ok'));
   if(!od.length){toast('Gönderilecek ödev yok. Önce Ödev ver sekmesinden ata.');return;}
-  const p={v:2,a:DB.ad,t:tel(DB.tel),kp:(DB.kocPanelUrl||'').split('#')[0],du:DB.driveUrl||'',su:DB.sure||{},
-    o:{i:o.id,n:o.ad,s:o.sinif,h:o.hedef||''},
+  const ayar={kp:(DB.kocPanelUrl||'').split('#')[0],du:DB.driveUrl||'',su:DB.sure||{},t:tel(DB.tel),a:DB.ad};
+  const imza=JSON.stringify(ayar);
+  DB.sonAyar=DB.sonAyar||{};
+  const tekrarla=$('pAyar').checked||DB.sonAyar[oid]!==imza;
+  const p={v:2,o:{i:o.id,n:o.ad,s:o.sinif,h:o.hedef||''},
     d:od.map(x=>({i:x.id,v:x.verilis,t:x.teslim,
       k:x.kalemler.map(k=>({i:k.testId,a:k.ad,l:kisaLink(k.link),u:k.unite,o:k.konu,s:k.soru||0}))}))};
-  const kod='P1:'+b64u(JSON.stringify(p));
+  if(tekrarla)Object.assign(p,ayar);
+  const ham=JSON.stringify(p);
+  const sik='P2:'+lzSik(ham), duz='P1:'+b64u(ham);
+  const kod=sik.length<duz.length?sik:duz;
+  DB.sonAyar[oid]=imza;kaydet();
   const base=(DB.ogrPanelUrl||'').trim().split('#')[0];
   const testSay=od.reduce((a,x)=>a+x.kalemler.length,0);
   if(base){
     const link=base+'#'+kod;
     $('pOut').value=link;
-    $('pDurum').innerHTML=`<p class="hint" style="margin-top:9px">${od.length} ödev · ${testSay} test · bağlantı ${link.length} karakter${link.length>4000?' <b style="color:var(--warn)">— uzun, WhatsApp bozabilir. "Sadece tamamlanmamış" kutusunu işaretle.</b>':''}</p>`;
-    toast('Tıklanabilir bağlantı hazır.');
+    const uz=link.length;
+    const durum = uz<1200 ? '<span class="pill p-ok">kısa · WhatsApp sorunsuz tanır</span>'
+      : uz<2200 ? '<span class="pill p-warn">orta · kopyala-yapıştır ile gönder</span>'
+      : '<span class="pill p-bad">uzun · test sayısını azalt</span>';
+    $('pDurum').innerHTML=`<p class="hint" style="margin-top:9px">${od.length} ödev · ${testSay} test · ${uz} karakter ${durum}</p>`;
+    toast('Bağlantı hazır · '+uz+' karakter');
   }else{
     $('pOut').value=kod;
     $('pDurum').innerHTML='<div class="empty" style="margin-top:10px"><b>Panel adresi girilmemiş</b>Ayarlar sekmesine öğrenci panelinin adresini yazarsan bağlantı tıklanabilir olur. Şimdilik metin üretildi, öğrenci elle yapıştırmalı.</div>';
@@ -1016,20 +1072,30 @@ function paketUret(){
 }
 function kopyala(id){const t=$(id);if(!t.value){toast('Önce paketi oluştur.');return;}t.select();navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>document.execCommand('copy'));}
 function waGonder(){
-  if(!$('pOut').value){toast('Önce paketi oluştur.');return;}
-  const o=DB.ogrenciler.find(x=>x.id===AKTIF);
   const v=$('pOut').value;
-  const link=v.startsWith('http');
-  const msg=link
-    ? `${o.ad}, bu haftanın biyoloji ödevi hazır. Bağlantıya dokun, ödevlerin panelinde açılacak.\n\n${v}`
-    : `${o.ad}, bu haftanın biyoloji ödevi hazır.\n\n1) Panelini aç\n2) "Paket yükle" sekmesine aşağıdaki metnin tamamını yapıştır\n\n${v}`;
+  if(!v){toast('Önce bağlantıyı oluştur.');return;}
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);
   const n=tel(o.tel);
-  if(!n)toast('Bu öğrencinin numarası kayıtlı değil — WhatsApp kişi seçme ekranı açılacak.');
-  window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
+  const link=v.startsWith('http');
+  if(link&&v.length<1200){
+    const msg=`${o.ad}, bu haftanın biyoloji ödevi hazır. Bağlantıya dokun.\n\n${v}`;
+    window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
+    return;
+  }
+  // uzun bağlantı: panoya kopyala, sohbeti aç, yapıştırt
+  const bitir=()=>{
+    window.open('https://wa.me/'+n,'_blank');
+    toast('Bağlantı kopyalandı. Açılan sohbete yapıştırıp gönder.');
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(v).then(bitir,()=>{$('pOut').select();document.execCommand('copy');bitir();});
+  }else{$('pOut').select();document.execCommand('copy');bitir();}
 }
 let bekleyenRapor=null;
 function raporCoz(raw){
   raw=(raw||'').trim();
+  const j=raw.indexOf('R2:');
+  if(j>=0)return JSON.parse(lzAc(raw.slice(j+3)));
   const i=raw.indexOf('R1:');
   if(i>=0)return JSON.parse(b64ud(raw.slice(i+3)));
   if(raw.startsWith('BIYORAPOR1:'))return JSON.parse(b64d(raw.slice(11)));
@@ -1109,7 +1175,7 @@ function hepsiniSil(){if(!confirm('Tüm öğrenciler, katalog ve ödevler siline
 /* ---------- başlat ---------- */
 function hashOku(){
   const h=decodeURIComponent(location.hash||'');
-  if(h.indexOf('R1:')<0)return;
+  if(h.indexOf('R1:')<0&&h.indexOf('R2:')<0)return;
   $('rIn').value=h.replace(/^#/,'');
   history.replaceState(null,'',location.pathname+location.search);
   git('paket');raporOnizle();
