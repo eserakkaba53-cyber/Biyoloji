@@ -257,7 +257,7 @@ const SURE={
 
 function konuDuzlem(){const o=[];for(const a in AGAC)for(const u in AGAC[a])for(const k of AGAC[a][u])o.push({sinif:a,unite:u,konu:k});return o;}
 function govde(w){return w.slice(0,Math.max(5,Math.floor(w.length*0.75)));}
-function skorla(m,konu){const n=nrm(m);const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=4);
+function skorla(m,konu){const n=nrm(m);const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!['icin','olan','veya','ile','bir'].includes(w));
   if(!kel.length)return 0;let h=0;kel.forEach(w=>{if(n.includes(govde(w)))h++;});return h/kel.length;}
 function adTahmin(ad,st){let en=null,es=0;konuDuzlem().forEach(x=>{let v=skorla(ad,x.konu);if(v<0.6)return;
   if(st&&x.sinif===st)v+=0.05;if(v>es){es=v;en=x;}});return en;}

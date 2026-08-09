@@ -25,7 +25,22 @@ input,select,textarea{font-family:inherit;font-size:inherit}
 #logoBox img{width:100%;height:100%;object-fit:contain}
 .brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7FA8A5;font-weight:600}
 .brand b{display:block;font-size:16px;letter-spacing:0;text-transform:none;color:#fff;margin-top:1px;font-weight:600}
-.nav{padding:8px 0;flex:1;overflow:auto}
+.nav{padding:4px 0}
+#navOgr{flex:1;overflow:auto;min-height:40px}
+.rail-sec{padding:12px 16px 5px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5F7B85;font-weight:700}
+.rail-add{display:block;width:calc(100% - 24px);margin:6px 12px 4px;background:rgba(79,179,169,.14);color:#8FD3CB;
+  border:1px dashed rgba(79,179,169,.45);border-radius:7px;padding:8px;font-weight:600;font-size:13px}
+.rail-add:hover{background:rgba(79,179,169,.24);color:#fff}
+.nav .sn{font-size:11px;color:#7E9AA3;display:block;font-weight:400;margin-top:1px}
+.nav button.on .sn{color:#A9CBD1}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 18px;overflow-x:auto}
+.subtabs button{background:none;border:0;padding:9px 14px;color:var(--ink-3);font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.subtabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.subtabs button:hover{color:var(--ink)}
+.ohead{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.ohead h1{margin:0}
+.ohead .tag{font-size:12px;color:var(--ink-3)}
+.ovl{position:fixed;inset:0;background:rgba(18,36,48,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
 .nav button{display:flex;width:100%;gap:9px;align-items:center;text-align:left;background:none;border:0;color:#C6D5DB;padding:9px 16px;border-left:3px solid transparent}
 .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav button.on{background:rgba(255,255,255,.11);border-left-color:var(--accent-2);color:#fff;font-weight:600}
@@ -121,26 +136,19 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <div id="logoBox"></div>
       <div class="brand">Özel Ders<b id="brandName">Biyoser</b></div>
     </div>
-    <nav class="nav" id="nav"></nav>
+    <div class="rail-sec">Öğrenciler</div>
+    <nav class="nav" id="navOgr"></nav>
+    <button class="rail-add" onclick="ogrModal()">+ Yeni öğrenci</button>
+    <div class="rail-sec">Sistem</div>
+    <nav class="nav" id="navSis"></nav>
     <div class="rail-foot">Koç Paneli · <span id="ver"></span></div>
   </aside>
   <main class="main">
-
-    <!-- ÖĞRENCİLER -->
-    <section class="page on" id="pg-ogr">
-      <h1>Öğrenciler</h1><p class="sub">Biyoloji özel ders öğrencilerin ve genel durumları.</p>
-      <div class="card"><h3>Yeni öğrenci</h3>
-        <div class="row">
-          <div><label>Ad soyad</label><input type="text" id="oAd" placeholder="Örn. Zehra Y."></div>
-          <div><label>Sınıf / düzey</label>
-            <select id="oSinif"><option>9. Sınıf</option><option>10. Sınıf</option><option>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select></div>
-          <div><label>Hedef</label><input type="text" id="oHedef" placeholder="Örn. AYT Biyoloji 12 net"></div>
-          <div><label>WhatsApp numarası</label><input type="text" id="oTel" placeholder="05XX XXX XX XX"></div>
-          <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end"><button class="btn" onclick="ogrEkle()">Öğrenci ekle</button></div>
-        </div>
-      </div>
-      <div id="ogrList"></div>
-    </section>
+    <div id="ogrHead" style="display:none">
+      <div class="ohead"><h1 id="ohAd"></h1><span class="tag" id="ohTag"></span></div>
+      <div class="subtabs" id="subtabs"></div>
+    </div>
+    <div id="bosEkran" class="empty" style="display:none;margin-top:40px"><b>Soldan bir öğrenci seç</b>Ya da "+ Yeni öğrenci" ile ilkini ekle.</div>
 
     <!-- TEST KATALOĞU -->
     <section class="page" id="pg-kat">
@@ -209,7 +217,7 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
 
     <!-- ÖDEV VER -->
     <section class="page" id="pg-odev">
-      <h1>Ödev ver</h1><p class="sub">Yazmaya başla, testler süzülsün. Kutu boşken tüm katalog listelenir.</p>
+      <p class="sub" style="margin-top:0">Yazmaya başla, testler süzülsün. Kutu boşken tüm katalog listelenir.</p>
       <div class="card">
         <div class="search-wrap">
           <input type="text" id="q" placeholder="Ünite, konu ya da test adı yaz… (boş bırakırsan hepsi listelenir)" oninput="odevCiz()">
@@ -224,7 +232,6 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
       <div class="tray" id="tray" style="display:none">
         <b id="traySay">0 test seçildi</b>
         <span class="sp"></span>
-        <select id="tOgr" onchange="odevCiz()"></select>
         <input type="date" id="tTeslim">
         <button class="btn" style="background:var(--accent-2);color:#08282a" onclick="odevOlustur()">Ödevi ata</button>
       </div>
@@ -232,23 +239,15 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
 
     <!-- TAKİP -->
     <section class="page" id="pg-takip">
-      <h1>Takip ve değerlendirme</h1><p class="sub">Verilen ödevler, gelen sonuçlar, konu bazlı zayıflık.</p>
-      <div class="card"><h3>Öğrenci seç</h3>
-        <select id="takipOgr" onchange="takipCiz()"></select>
-      </div>
+      <p class="sub" style="margin-top:0">Deneme grafiği, konu haznesi, verilen ödevler ve gelen sonuçlar.</p>
       <div id="takipOut"></div>
     </section>
 
     <!-- PAKET / RAPOR -->
     <section class="page" id="pg-paket">
-      <h1>Paket ve rapor</h1><p class="sub">Ödevi öğrenciye gönder, çözdüğü sonuçları geri al.</p>
+      <p class="sub" style="margin-top:0">Ödevi öğrenciye gönder, çözdüğü sonuçları geri al.</p>
       <div class="card"><h3>1 · Öğrenciye ödev gönder</h3>
-        <div class="row">
-          <div><label>Öğrenci</label><select id="pOgr"></select></div>
-          <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end;gap:8px">
-            <button class="btn" onclick="paketUret()">Bağlantıyı oluştur</button>
-          </div>
-        </div>
+        <button class="btn" onclick="paketUret()">Bağlantıyı oluştur</button>
         <div style="margin-top:9px"><label><input type="checkbox" id="pSadece" style="width:auto" checked> Sadece tamamlanmamış ödevleri gönder (bağlantıyı kısa tutar)</label></div>
         <div id="pDurum"></div>
         <textarea id="pOut" placeholder="Tıklanabilir bağlantı burada belirecek…" style="margin-top:9px;min-height:70px"></textarea>
@@ -265,6 +264,25 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
         <button class="btn" style="margin-top:9px" onclick="raporOnizle()">Önizle</button>
         <div id="rOut"></div>
       </div>
+    </section>
+
+    <!-- ÖĞRENCİ BİLGİLERİ -->
+    <section class="page" id="pg-bilgi">
+      <div class="card"><h3>Öğrenci bilgileri</h3>
+        <div class="row">
+          <div><label>Ad soyad</label><input type="text" id="bAd"></div>
+          <div><label>Sınıf / düzey</label><select id="bSinif"><option>9. Sınıf</option><option>10. Sınıf</option><option>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div><label>Hedef</label><input type="text" id="bHedef" placeholder="Örn. AYT Biyoloji 12 net"></div>
+          <div><label>WhatsApp numarası</label><input type="text" id="bTel" placeholder="05XX XXX XX XX"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+          <button class="btn" onclick="bilgiKaydet()">Kaydet</button>
+          <button class="btn danger" onclick="ogrSil(AKTIF)">Öğrenciyi sil</button>
+        </div>
+      </div>
+      <div id="bOzet"></div>
     </section>
 
     <!-- AYARLAR -->
@@ -448,15 +466,62 @@ function yukle(){
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(DB));}
 
 /* ---------- gezinme ---------- */
-const SAYFALAR=[['ogr','Öğrenciler'],['kat','Test kataloğu'],['odev','Ödev ver'],['takip','Takip'],['paket','Paket / Rapor'],['ayar','Ayarlar']];
+let AKTIF=null, ALT='odev';
+const ALTSEK=[['odev','Ödev ver'],['takip','Takip'],['paket','Gönder & Al'],['bilgi','Bilgiler']];
+const SISSEK=[['kat','Test kataloğu'],['ayar','Ayarlar']];
+
 function navCiz(){
-  $('nav').innerHTML=SAYFALAR.map(([k,ad])=>{
+  $('navOgr').innerHTML=DB.ogrenciler.length?DB.ogrenciler.map(o=>{
+    const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
+    const bek=od.flatMap(x=>x.kalemler).filter(k=>k.durum!=='ok').length;
+    return `<button data-o="${o.id}" class="${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
+      <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.ad)}</span>
+      <span class="sn">${esc(o.sinif)}</span></span>
+      ${bek?`<span class="badge">${bek}</span>`:''}</button>`;
+  }).join(''):'<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz öğrenci yok.</div>';
+  $('navSis').innerHTML=SISSEK.map(([k,ad])=>{
     let b='';
-    if(k==='ogr'&&DB.ogrenciler.length)b=`<span class="badge">${DB.ogrenciler.length}</span>`;
     if(k==='kat'&&DB.katalog.length)b=`<span class="badge">${DB.katalog.length}</span>`;
-    if(k==='takip'){const n=DB.odevler.filter(o=>o.kalemler.some(x=>x.durum!=='ok')).length;if(n)b=`<span class="badge">${n}</span>`;}
-    return `<button data-k="${k}" class="${k==='ogr'?'on':''}" onclick="git('${k}')">${ad}${b}</button>`;
+    return `<button data-k="${k}" class="${(!AKTIF&&ALT===k)?'on':''}" onclick="gitSis('${k}')">${ad}${b}</button>`;
   }).join('');
+}
+function altCiz(){
+  $('subtabs').innerHTML=ALTSEK.map(([k,ad])=>
+    `<button class="${ALT===k?'on':''}" onclick="gitAlt('${k}')">${ad}</button>`).join('');
+}
+function sayfaGoster(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const el=$('pg-'+id); if(el)el.classList.add('on');
+}
+function gitOgr(id,alt){
+  AKTIF=id; ALT=alt||(['odev','takip','paket','bilgi'].includes(ALT)?ALT:'odev');
+  const o=DB.ogrenciler.find(x=>x.id===id);
+  if(!o){AKTIF=null;return gitSis('kat');}
+  $('bosEkran').style.display='none';
+  $('ogrHead').style.display='';
+  $('ohAd').textContent=o.ad;
+  $('ohTag').textContent=[o.sinif,o.hedef||null,o.tel||null].filter(Boolean).join(' · ');
+  navCiz();altCiz();gitAlt(ALT);
+}
+function gitAlt(k){
+  ALT=k;altCiz();sayfaGoster(k);
+  if(k==='odev')odevCiz();
+  if(k==='takip')takipCiz();
+  if(k==='paket'){$('pOut').value='';$('pDurum').innerHTML='';}
+  if(k==='bilgi')bilgiCiz();
+  window.scrollTo(0,0);
+}
+function gitSis(k){
+  AKTIF=null;ALT=k;
+  $('ogrHead').style.display='none';$('bosEkran').style.display='none';
+  navCiz();sayfaGoster(k);
+  if(k==='kat')katalogCiz();
+  window.scrollTo(0,0);
+}
+function git(k){ // eski çağrılar için köprü
+  if(['kat','ayar'].includes(k))return gitSis(k);
+  if(AKTIF)return gitAlt(k);
+  gitSis('kat');
 }
 function git(k){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -467,45 +532,62 @@ function git(k){
 }
 
 /* ---------- öğrenciler ---------- */
-function ogrEkle(){
-  const ad=$('oAd').value.trim();
-  if(!ad){toast('Öğrencinin adını yaz.');return;}
-  DB.ogrenciler.push({id:uid(),ad,sinif:$('oSinif').value,hedef:$('oHedef').value.trim(),tel:$('oTel').value.trim(),eklendi:bugun()});
-  $('oAd').value='';$('oHedef').value='';$('oTel').value='';
-  kaydet();ogrCiz();ogrSecDoldur();navCiz();toast(ad+' eklendi.');
-}
-function ogrSil(id){
-  const o=DB.ogrenciler.find(x=>x.id===id);
-  if(!confirm(o.ad+' ve tüm ödev kaydı silinsin mi?'))return;
-  DB.ogrenciler=DB.ogrenciler.filter(x=>x.id!==id);
-  DB.odevler=DB.odevler.filter(x=>x.ogrenciId!==id);
-  kaydet();ogrCiz();ogrSecDoldur();navCiz();
-}
-function ogrCiz(){
-  if(!DB.ogrenciler.length){$('ogrList').innerHTML='<div class="empty"><b>Henüz öğrenci yok</b>Yukarıdaki alandan ilk öğrencini ekle.</div>';return;}
-  $('ogrList').innerHTML='<div class="card"><table><thead><tr><th>Öğrenci</th><th>Sınıf</th><th>WhatsApp</th><th>Ödev</th><th>Ortalama net</th><th></th></tr></thead><tbody>'+
-    DB.ogrenciler.map(o=>{
-      const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
-      const kal=od.flatMap(x=>x.kalemler);
-      const bit=kal.filter(k=>k.durum==='ok');
-      const ort=bit.length?(bit.reduce((a,k)=>a+net(k.D,k.Y),0)/bit.length).toFixed(1):'—';
-      return `<tr><td><b>${esc(o.ad)}</b><div class="hint">${esc(o.hedef)||'hedef yok'}</div></td><td>${esc(o.sinif)}</td>
-      <td>${o.tel?`<a href="https://wa.me/${tel(o.tel)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(o.tel)}</a>`:'<span class="pill p-warn">numara yok</span>'}
-        <div><button class="btn ghost sm" style="margin-top:4px" onclick="telDuzenle('${o.id}')">Numarayı düzenle</button></div></td>
-      <td><span class="pill p-neu">${bit.length}/${kal.length}</span></td><td class="mono">${ort}</td>
-      <td style="text-align:right"><button class="btn ghost sm" onclick="ogrSil('${o.id}')">Sil</button></td></tr>`;
-    }).join('')+'</tbody></table></div>';
+function ogrModal(){
+  const ov=document.createElement('div');ov.className='ovl';
+  ov.innerHTML=`<div class="card" style="max-width:440px;width:100%;margin:0">
+    <h3>Yeni öğrenci</h3>
+    <label>Ad soyad</label><input type="text" id="mAd" placeholder="Örn. Zehra Y.">
+    <label style="margin-top:9px">Sınıf / düzey</label>
+    <select id="mSinif"><option>9. Sınıf</option><option>10. Sınıf</option><option selected>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select>
+    <label style="margin-top:9px">Hedef</label><input type="text" id="mHedef" placeholder="Örn. AYT Biyoloji 12 net">
+    <label style="margin-top:9px">WhatsApp numarası</label><input type="text" id="mTel" placeholder="05XX XXX XX XX">
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="mOk">Ekle</button><button class="btn ghost" id="mNo">Vazgeç</button></div></div>`;
+  document.body.appendChild(ov);
+  const kapat=()=>ov.remove();
+  ov.querySelector('#mNo').onclick=kapat;
+  ov.onclick=e=>{if(e.target===ov)kapat();};
+  setTimeout(()=>ov.querySelector('#mAd').focus(),50);
+  ov.querySelector('#mOk').onclick=()=>{
+    const ad=ov.querySelector('#mAd').value.trim();
+    if(!ad){toast('Öğrencinin adını yaz.');return;}
+    const id=uid();
+    DB.ogrenciler.push({id,ad,sinif:ov.querySelector('#mSinif').value,
+      hedef:ov.querySelector('#mHedef').value.trim(),tel:ov.querySelector('#mTel').value.trim(),eklendi:bugun()});
+    kaydet();kapat();gitOgr(id,'odev');toast(ad+' eklendi.');
+  };
 }
 function tel(t){let d=(t||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('0'))d='90'+d.slice(1);else if(d.length===10)d='90'+d;return d;}
-function telDuzenle(id){
-  const o=DB.ogrenciler.find(x=>x.id===id);
-  const y=prompt(o.ad+' için WhatsApp numarası:',o.tel||'');
-  if(y===null)return;
-  o.tel=y.trim();kaydet();ogrCiz();toast('Numara güncellendi.');
+function ogrSil(id){
+  const o=DB.ogrenciler.find(x=>x.id===id);if(!o)return;
+  if(!confirm(o.ad+' ve tüm ödev kaydı silinsin mi? Bu işlem geri alınamaz.'))return;
+  DB.ogrenciler=DB.ogrenciler.filter(x=>x.id!==id);
+  DB.odevler=DB.odevler.filter(x=>x.ogrenciId!==id);
+  AKTIF=null;kaydet();
+  if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id); else {navCiz();$('ogrHead').style.display='none';document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));$('bosEkran').style.display='';}
+  toast('Silindi.');
 }
-function ogrSecDoldur(){
-  const html=DB.ogrenciler.map(o=>`<option value="${o.id}">${esc(o.ad)} · ${esc(o.sinif)}</option>`).join('');
-  ['tOgr','takipOgr','pOgr'].forEach(id=>{const el=$(id);const v=el.value;el.innerHTML=html||'<option value="">— öğrenci yok —</option>';if(v)el.value=v;});
+function bilgiCiz(){
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
+  $('bAd').value=o.ad;$('bSinif').value=o.sinif;$('bHedef').value=o.hedef||'';$('bTel').value=o.tel||'';
+  const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
+  const kal=od.flatMap(x=>x.kalemler), bit=kal.filter(k=>k.durum==='ok');
+  const kendi=(DB.odevler.find(x=>x.ogrenciId===o.id&&x.kendi)||{kalemler:[]}).kalemler.length;
+  const ort=bit.length?(bit.reduce((a,k)=>a+net(k.D,k.Y),0)/bit.length).toFixed(1):'—';
+  $('bOzet').innerHTML=`<div class="card"><h3>Özet</h3>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;font-size:13px">
+      <span>Verilen ödev<b style="display:block;font-size:20px" class="mono">${od.length}</b></span>
+      <span>Test<b style="display:block;font-size:20px" class="mono">${bit.length}/${kal.length}</b></span>
+      <span>Kendi çözdüğü<b style="display:block;font-size:20px" class="mono">${kendi}</b></span>
+      <span>Ortalama net<b style="display:block;font-size:20px" class="mono">${ort}</b></span>
+      <span>Kayıt<b style="display:block;font-size:15px" class="mono">${trh(o.eklendi)}</b></span>
+    </div></div>`;
+}
+function bilgiKaydet(){
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
+  const ad=$('bAd').value.trim();
+  if(!ad){toast('Ad boş olamaz.');return;}
+  o.ad=ad;o.sinif=$('bSinif').value;o.hedef=$('bHedef').value.trim();o.tel=$('bTel').value.trim();
+  kaydet();gitOgr(o.id,'bilgi');toast('Kaydedildi.');
 }
 
 /* ---------- katalog ---------- */
@@ -580,7 +662,7 @@ function konuDuzlem(){
 function govde(w){return w.slice(0,Math.max(5,Math.floor(w.length*0.75)));}
 function skorla(metin,konu){
   const n=nrm(metin);
-  const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!['icin','olan','bunl','veya'].includes(w));
+  const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!['icin','olan','veya','ile','bir'].includes(w));
   if(!kel.length)return 0;
   let hit=0;kel.forEach(w=>{if(n.includes(govde(w)))hit++;});
   return hit/kel.length;
@@ -730,7 +812,7 @@ function vurgula(metin,q){
 function gecmis(oid){
   const m={};
   if(!oid)return m;
-  DB.odevler.filter(x=>x.ogrenciId===oid).forEach(o=>o.kalemler.forEach(k=>{
+  DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi).forEach(o=>o.kalemler.forEach(k=>{
     const g=m[k.testId]=m[k.testId]||{kez:0,son:null,net:null,bekleyen:0};
     g.kez++;
     if(k.durum==='ok'){ if(!g.son||(k.tarih||'')>=g.son){g.son=k.tarih||o.verilis;g.net=net(k.D,k.Y);} }
@@ -745,7 +827,7 @@ function rozet(g){
 }
 function odevCiz(){
   const q=nrm($('q').value);
-  const oid=($('tOgr')||{}).value||'';
+  const oid=AKTIF||'';
   const G=gecmis(oid);
   const gizle=($('qGizle')||{}).checked;
   let list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
@@ -779,8 +861,8 @@ function trayCiz(){
   if(!$('tTeslim').value){const d=new Date();d.setDate(d.getDate()+7);$('tTeslim').value=d.toISOString().slice(0,10);}
 }
 function odevOlustur(){
-  const oid=$('tOgr').value;
-  if(!oid){toast('Önce bir öğrenci ekle.');return;}
+  const oid=AKTIF;
+  if(!oid){toast('Önce soldan bir öğrenci seç.');return;}
   const G=gecmis(oid);
   const tekrar=[...secili].filter(id=>G[id]);
   if(tekrar.length){
@@ -795,7 +877,7 @@ function odevOlustur(){
   DB.odevler.push({id:uid(),ogrenciId:oid,verilis:bugun(),teslim:$('tTeslim').value,kalemler});
   secili.clear();kaydet();odevCiz();navCiz();
   const o=DB.ogrenciler.find(x=>x.id===oid);
-  toast(o.ad+' için '+kalemler.length+' testlik ödev oluşturuldu. Paket sekmesinden gönder.');
+  toast(kalemler.length+' testlik ödev oluşturuldu. "Gönder & Al" sekmesinden yolla.');
 }
 
 /* ---------- takip ---------- */
@@ -864,8 +946,8 @@ function sureSet(k,v){
 }
 
 function takipCiz(){
-  const oid=$('takipOgr').value, out=$('takipOut');
-  if(!oid){out.innerHTML='<div class="empty"><b>Öğrenci yok</b>Önce Öğrenciler sekmesinden ekle.</div>';return;}
+  const oid=AKTIF, out=$('takipOut');
+  if(!oid)return;
   const od=DB.odevler.filter(x=>x.ogrenciId===oid).sort((a,b)=>b.verilis.localeCompare(a.verilis));
   if(!od.length){out.innerHTML='<div class="empty"><b>Bu öğrenciye henüz ödev verilmedi</b>Ödev ver sekmesinden başla.</div>';return;}
   const kal=od.flatMap(x=>x.kalemler).filter(k=>k.durum==='ok');
@@ -908,8 +990,8 @@ function odevSil(id){if(!confirm('Ödev ve sonuçları silinsin mi?'))return;DB.
 
 /* ---------- paket / rapor ---------- */
 function paketUret(){
-  const oid=$('pOgr').value;
-  if(!oid){toast('Öğrenci seç.');return;}
+  const oid=AKTIF;
+  if(!oid){toast('Önce soldan bir öğrenci seç.');return;}
   const o=DB.ogrenciler.find(x=>x.id===oid);
   let od=DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi);
   if($('pSadece').checked)od=od.filter(x=>x.kalemler.some(k=>k.durum!=='ok'));
@@ -935,7 +1017,7 @@ function paketUret(){
 function kopyala(id){const t=$(id);if(!t.value){toast('Önce paketi oluştur.');return;}t.select();navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>document.execCommand('copy'));}
 function waGonder(){
   if(!$('pOut').value){toast('Önce paketi oluştur.');return;}
-  const o=DB.ogrenciler.find(x=>x.id===$('pOgr').value);
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);
   const v=$('pOut').value;
   const link=v.startsWith('http');
   const msg=link
@@ -997,7 +1079,7 @@ function raporUygula(){
   }
   kaydet();bekleyenRapor=null;$('rIn').value='';$('rOut').innerHTML='';navCiz();
   toast(n+' test sonucu işlendi.');
-  $('takipOgr').value=oid;git('takip');
+  gitOgr(oid,'takip');
 }
 
 /* ---------- ayarlar ---------- */
@@ -1042,7 +1124,10 @@ function basla(){
   $('aOgrUrl').value=DB.ogrPanelUrl||'';
   $('aKocUrl').value=DB.kocPanelUrl||(location.origin+location.pathname);
   $('dUrl').value=DB.driveUrl||'';
-  logoCiz();navCiz();ogrCiz();ogrSecDoldur();katalogCiz();odevCiz();takipCiz();hashOku();
+  logoCiz();navCiz();katalogCiz();
+  if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id,'odev');
+  else {$('bosEkran').style.display='';}
+  hashOku();
 }
 basla();
 </script>
