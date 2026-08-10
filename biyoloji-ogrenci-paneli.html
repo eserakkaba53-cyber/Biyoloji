@@ -49,6 +49,10 @@ textarea{min-height:110px;resize:vertical;font-family:var(--mono);font-size:12px
 .empty b{display:block;color:var(--ink-2);font-size:16px;margin-bottom:5px}
 .mono{font-family:var(--mono)}
 .hint{font-size:12.5px;color:var(--ink-3)}
+.warnbar{background:var(--bad);color:#fff;padding:10px 14px;font-size:13.5px;line-height:1.45}
+.warnbar b{display:block;margin-bottom:2px}
+.tipbar{background:#FFF6DE;color:#6B4E0B;padding:10px 14px;font-size:13px;border-bottom:1px solid #EBD9A8;display:flex;gap:10px;align-items:flex-start}
+.tipbar button{background:none;border:0;color:#6B4E0B;font-weight:700;margin-left:auto;flex:none;font-size:16px;line-height:1}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:9px;z-index:99;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:90vw;text-align:center}
 
 /* test satırı */
@@ -87,6 +91,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 @media(max-width:520px){.grid3{grid-template-columns:1fr}}
 </style>
 
+<div id="uyari"></div>
 <header class="top">
   <div id="logoBox"></div>
   <div class="brand">Özel Ders<b id="brandName">Biyoser</b></div>
@@ -313,7 +318,7 @@ const SEBEPLER=['','Bilmiyordum','Yanlış okudum','Dikkatsizlik','Zaman yetmedi
 
 let S=yukle();
 function yukle(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}
-  return {logo:null,ad:'Biyoser',kocTel:'',kocPanel:'',driveUrl:'',kutuphane:[],kutupTarih:'',konuDurum:{},sure:{},ogrenci:null,odevler:[],ekstra:[]};}
+  return {logo:null,ad:'Biyoser',kocTel:'',kocPanel:'',driveUrl:'',ipucu:0,kutuphane:[],kutupTarih:'',konuDurum:{},sure:{},ogrenci:null,odevler:[],ekstra:[]};}
 function kaydet(){localStorage.setItem(KEY,JSON.stringify(S));}
 
 const SAYFALAR=[['odev','Ödevlerim'],['kutup','Test kütüphanesi'],['konu','Konu takibi'],['ekle','Kendim çözdüm'],['ilerleme','İlerleme'],['rapor','Rapor gönder'],['ayarlar','Ayarlar']];
@@ -370,7 +375,10 @@ function paketYukle(kaynak){
 function odevCiz(){
   $('who').innerHTML=S.ogrenci?`<b>${esc(S.ogrenci.ad)}</b>${esc(S.ogrenci.sinif||'')}`:'';
   if(!S.odevler.length){
-    $('odevList').innerHTML='<div class="empty"><b>Henüz ödev yok</b>Öğretmeninin gönderdiği paketi "Paket yükle" sekmesinden ekle.</div>';return;}
+    $('odevList').innerHTML='<div class="empty"><b>Burada ödev görünmüyor</b>'+
+      'Öğretmeninin WhatsApp\'tan gönderdiği <b>ödev bağlantısına</b> dokunarak gir — ödevlerin oradan yüklenir.'+
+      '<br><br>Daha önce ödevin vardı ve şimdi görünmüyorsa, sayfayı WhatsApp\'ın kendi tarayıcısı yerine '+
+      'Chrome ya da Safari\'de aç, sonra bağlantıya tekrar dokun.</div>';return;}
   const sirali=[...S.odevler].sort((a,b)=>(b.verilis||'').localeCompare(a.verilis||''));
   $('odevList').innerHTML=sirali.map(o=>{
     const bit=o.kalemler.filter(k=>k.durum==='ok').length, tum=o.kalemler.length;
@@ -722,9 +730,24 @@ function hashOku(){
   const h=decodeURIComponent(location.hash||'');
   if(h.indexOf('P1:')<0&&h.indexOf('P2:')<0)return;
   paketYukle(h.replace(/^#/,''));
-  history.replaceState(null,'',location.pathname+location.search);
 }
-function basla(){logoCiz();tabCiz();odevCiz();
+function hafizaKontrol(){
+  let calisiyor=false;
+  try{localStorage.setItem('__t','1');calisiyor=localStorage.getItem('__t')==='1';localStorage.removeItem('__t');}catch(e){}
+  if(!calisiyor){
+    $('uyari').innerHTML='<div class="warnbar"><b>Bu tarayıcı kayıt tutmuyor</b>'+
+      'Girdiğin sonuçlar kaybolur. Sağ üstteki menüden "Tarayıcıda aç" (iPhone: paylaş → Safari\'de Aç) seçeneğini kullan.</div>';
+    return false;
+  }
+  if(S.ogrenci&&!S.ipucu){
+    $('uyari').innerHTML='<div class="tipbar"><span><b>İpucu:</b> Bu sayfayı telefonunun ana ekranına ekle — '+
+      'menüden "Ana ekrana ekle". Böylece ödevlerin hep elinin altında olur ve hiçbir kaydın kaybolmaz.</span>'+
+      '<button onclick="ipucuKapat()" title="Kapat">×</button></div>';
+  }
+  return true;
+}
+function ipucuKapat(){S.ipucu=1;kaydet();$('uyari').innerHTML='';}
+function basla(){logoCiz();tabCiz();odevCiz();hafizaKontrol();
   if(S.driveUrl&&!(S.kutuphane||[]).length)kutupCek();}
 basla();
 hashOku();
