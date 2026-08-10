@@ -684,6 +684,7 @@ function raporUret(){
   const kod=sik.length<duz.length?sik:duz;
   const base=(S.kocPanel||'').split('#')[0];
   $('rOut').value = base ? base+'#'+kod : kod;
+  postaYaz(kod).then(k=>{ if(k&&base){ $('rOut').value=base+'#K:'+k; toast('Kısa bağlantı hazır.'); } });
   toast((sonuclar.length+ek.length)+' sonuç hazır. WhatsApp\'tan gönder.');
 }
 function kopyala(){const t=$('rOut');if(!t.value){toast('Önce raporu oluştur.');return;}t.select();navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>document.execCommand('copy'));}
@@ -691,7 +692,7 @@ function wa(){
   const v=$('rOut').value;
   if(!v){toast('Önce raporu oluştur.');return;}
   const n=(S.kocTel||'').replace(/\D/g,'');
-  if(v.length<1200){
+  if(v.length<400){
     const msg=v.startsWith('http')?('Biyoloji ödev raporum hazır, bağlantıya dokunun hocam:\n\n'+v):('Biyoloji ödev raporum:\n\n'+v);
     window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');return;
   }
@@ -726,10 +727,32 @@ document.getElementById('yFile').onchange=e=>{
     S=d;kaydet();basla();kocCiz();toast('Yedek yüklendi.');}catch(err){toast('Bu dosya okunamadı.');}};
   rd.readAsText(f);
 };
-function hashOku(){
-  const h=decodeURIComponent(location.hash||'');
+async function postaOku(kod){
+  let [k,sid]=String(kod).split('~');
+  if(sid)S.driveUrl='https://script.google.com/macros/s/'+sid+'/exec';
+  if(!S.driveUrl)return null;
+  try{const r=await fetch(S.driveUrl+'?al='+encodeURIComponent(k));const j=await r.json();return (j&&j.veri)?j.veri:null;}
+  catch(e){return null;}
+}
+async function postaYaz(veri){
+  if(!S.driveUrl)return null;
+  const kod='r'+Math.random().toString(36).slice(2,9);
+  try{
+    const res=await fetch(S.driveUrl+'?koy='+encodeURIComponent(kod)+'&veri='+encodeURIComponent(veri));
+    const j=await res.json();
+    return (j&&j.ok)?kod:null;
+  }catch(e){return null;}
+}
+async function hashOku(){
+  const h=decodeURIComponent(location.hash||'').replace(/^#/,'');
+  if(h.startsWith('K:')){
+    $('odevList').innerHTML='<div class="empty"><b>Ödevlerin yükleniyor…</b>Bir saniye.</div>';
+    const v=await postaOku(h.slice(2));
+    if(!v){$('odevList').innerHTML='<div class="empty"><b>Ödev alınamadı</b>İnternet bağlantını kontrol edip sayfayı yenile. Sorun sürerse öğretmenine haber ver.</div>';return;}
+    kaydet();paketYukle(v);return;
+  }
   if(h.indexOf('P1:')<0&&h.indexOf('P2:')<0)return;
-  paketYukle(h.replace(/^#/,''));
+  paketYukle(h);
 }
 function hafizaKontrol(){
   let calisiyor=false;
