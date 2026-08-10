@@ -312,7 +312,7 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
           <li><b>Dağıt › Yeni dağıtım › Web uygulaması.</b> Çalıştıran: <b>Ben</b>. Erişimi olanlar: <b>Herkes</b>. Dağıt.<br><span class="hint">Köprüyü daha önce kurduysan yeni kod için: <b>Dağıt › Dağıtımları yönet › kalem simgesi › Sürüm: Yeni sürüm › Dağıt.</b> Adres değişmez.</span></li>
           <li>Çıkan <span class="mono">…/exec</span> adresini kopyala, <b>Test kataloğu</b> sekmesindeki kutuya yapıştır.</li>
         </ol>
-        <textarea readonly style="min-height:230px" id="asKod">function doGet(e) {
+        <textarea readonly style="min-height:260px" id="asKod">function doGet(e) {
   const KOK = &#x27;KLASOR_ID&#x27;;
   const p = (e &amp;&amp; e.parameter) ? e.parameter : {};
   if (p.koy &amp;&amp; p.veri) return cik(kutuYaz(p.koy, p.veri));
@@ -321,6 +321,13 @@ Hücre | Organeller | Organeller Karma Test | https://drive.google.com/file/d/yy
   const out = [];
   tara(DriveApp.getFolderById(kimlik), out);
   return cik(out);
+}
+
+function doPost(e) {
+  const p = (e &amp;&amp; e.parameter) ? e.parameter : {};
+  const govde = (e &amp;&amp; e.postData &amp;&amp; e.postData.contents) ? e.postData.contents : &#x27;&#x27;;
+  if (p.koy &amp;&amp; govde) return cik(kutuYaz(p.koy, govde));
+  return cik({ ok: false });
 }
 
 function cik(o) {
@@ -355,7 +362,10 @@ function kutuOku(kod) {
   const it = posta().getFilesByName(kod + &#x27;.txt&#x27;);
   return it.hasNext() ? it.next().getBlob().getDataAsString() : &#x27;&#x27;;
 }</textarea>
-        <button class="btn ghost sm" style="margin-top:8px" onclick="kopyala('asKod')">Kodu kopyala</button>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn ghost sm" onclick="kopyala('asKod')">Kodu kopyala</button>
+          <button class="btn sm" onclick="kopruTest()">Köprüyü test et</button></div>
+        <div id="ktOut"></div>
         <p class="hint" style="margin-top:9px">Köprü yalnızca dosya <b>adlarını ve bağlantılarını</b> okur, içeriği okumaz. Testlerin zaten "bağlantıya sahip herkes görebilir" olduğu için erişimde değişiklik olmaz.</p>
       </div>
 
@@ -1064,12 +1074,58 @@ function skriptId(u){const m=(u||'').match(/\/s\/([^/]+)\//);return m?m[1]:'';}
 async function postaYaz(veri,onek){
   if(!DB.driveUrl)return null;
   const kod=(onek||'p')+Math.random().toString(36).slice(2,9);
+  // 1) kısa paket: adres satırında gönder
+  if(veri.length<1400){
+    try{
+      const r=await fetch(DB.driveUrl+'?koy='+encodeURIComponent(kod)+'&veri='+encodeURIComponent(veri));
+      const j=await r.json();
+      if(j&&j.ok)return kod;
+    }catch(e){}
+  }
+  // 2) büyük paket: gövdede gönder
   try{
-    const r=await fetch(DB.driveUrl+'?koy='+encodeURIComponent(kod)+'&veri='+encodeURIComponent(veri));
+    const r=await fetch(DB.driveUrl+'?koy='+encodeURIComponent(kod),
+      {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:veri});
     const j=await r.json();
-    if(!j||!j.ok)return null;
-    return kod;
-  }catch(e){return null;}
+    if(j&&j.ok)return kod;
+  }catch(e){}
+  return null;
+}
+async function kopruTest(){
+  const out=$('ktOut'), u=(DB.driveUrl||'').trim();
+  const yaz=h=>out.innerHTML='<div style="margin-top:11px;font-size:13px;line-height:1.9">'+h+'</div>';
+  if(!u){yaz('<b style="color:var(--bad)">Köprü adresi boş.</b> Test kataloğu sekmesindeki kutuya /exec adresini yaz.');return;}
+  const ad=[]; const ok=t=>'<span style="color:var(--ok)">✓</span> '+t; const no=t=>'<span style="color:var(--bad)">✗</span> '+t;
+  yaz('Test ediliyor…');
+  // 1 · erişim
+  let liste=null;
+  try{const r=await fetch(u); liste=await r.json();}catch(e){
+    yaz(no('<b>Köprüye ulaşılamıyor.</b>')+'<br><span class="hint">Adres yanlış olabilir ya da dağıtımda "Erişimi olanlar: Herkes" seçilmemiştir.</span>');return;}
+  ad.push(Array.isArray(liste)?ok('Köprüye ulaşıldı · '+liste.length+' dosya görüyor')
+    :no('Köprü cevap verdi ama dosya listesi dönmedi (klasör kimliği yanlış olabilir)'));
+  // 2 · yazma (adres satırı)
+  const kod='test'+Math.random().toString(36).slice(2,7);
+  let yazdi=false;
+  try{const r=await fetch(u+'?koy='+kod+'&veri=DENEME123'); const j=await r.json(); yazdi=!!(j&&j.ok);}catch(e){}
+  ad.push(yazdi?ok('Posta kutusuna yazma çalışıyor')
+    :no('<b>Posta kutusuna yazılamıyor</b> — Apps Script kodu eski. Yukarıdaki kodu kopyalayıp güncelle, sonra <b>Dağıt › Dağıtımları yönet › kalem › Sürüm: Yeni sürüm › Dağıt</b>'));
+  // 3 · okuma
+  if(yazdi){
+    let okundu='';
+    try{const r=await fetch(u+'?al='+kod); const j=await r.json(); okundu=(j&&j.veri)||'';}catch(e){}
+    ad.push(okundu==='DENEME123'?ok('Posta kutusundan okuma çalışıyor'):no('Yazıldı ama geri okunamadı'));
+    // 4 · büyük paket (POST)
+    const buyuk='X'.repeat(3000);
+    let postOk=false;
+    try{const r=await fetch(u+'?koy='+kod+'b',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:buyuk});
+      const j=await r.json(); postOk=!!(j&&j.ok);
+      if(postOk){const r2=await fetch(u+'?al='+kod+'b'); const j2=await r2.json(); postOk=(j2&&j2.veri||'').length===3000;}
+    }catch(e){}
+    ad.push(postOk?ok('Büyük paketler de gönderilebiliyor'):no('Büyük paket gönderimi çalışmıyor — kodda doPost bölümü eksik olabilir'));
+  }
+  const hepsi=ad.every(x=>x.includes('✓'));
+  yaz(ad.join('<br>')+'<div style="margin-top:10px" class="pill '+(hepsi?'p-ok':'p-bad')+'">'+
+    (hepsi?'Köprü tam çalışıyor — kısa bağlantılar üretilecek':'Köprü eksik — panel şimdilik uzun bağlantı üretiyor')+'</div>');
 }
 async function postaOku(kod){
   let [k,sid]=String(kod).split('~');
