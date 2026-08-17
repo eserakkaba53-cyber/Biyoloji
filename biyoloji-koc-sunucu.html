@@ -184,6 +184,14 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <button class="btn" onclick="sifreKaydet()">Şifreyi kaydet</button>
     </div>
 
+
+    <div id="frmKurulum" style="display:none">
+      <p style="font-size:13px;color:var(--ink-2);margin:0 0 4px" id="kurNot"></p>
+      <label>Sunucu adresi</label><input type="text" id="suUrl" placeholder="https://xxxx.supabase.co">
+      <label>Anon anahtarı</label><textarea id="suKey" style="min-height:80px;font-family:var(--mono);font-size:11.5px" placeholder="eyJhbGciOiJIUzI1NiIs…"></textarea>
+      <button class="btn" onclick="sunucuKaydet()">Kaydet ve bağlan</button>
+      <p class="kucuk" id="kurAlt"></p>
+    </div>
     <div class="mesaj" id="kapiMesaj"></div>
   </div>
 </div>
@@ -348,7 +356,8 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
   </main>
 </div>
 
-<script src="sunucu.js"></script>
+<script>window.__sjs=false;</script>
+<script src="sunucu.js" onload="window.__sjs=true"></script>
 <script>
 /* ==========================================================
    BİYOSER · ÖZEL DERS KOÇ PANELİ (sunucu sürümü)
@@ -525,9 +534,9 @@ function oturumSil(){TOKEN=YENILE=KULLANICI=null;BITIS=0;try{localStorage.remove
 const API={
   async ham(yol,opt){
     opt=opt||{};
-    const h=Object.assign({'apikey':SUNUCU.key,'Content-Type':'application/json'},opt.headers||{});
+    const h=Object.assign({'apikey':SUNUCU_AYAR.key,'Content-Type':'application/json'},opt.headers||{});
     if(TOKEN&&!opt.anon)h['Authorization']='Bearer '+TOKEN;
-    const r=await fetch(SUNUCU.url+yol,Object.assign({},opt,{headers:h}));
+    const r=await fetch(SUNUCU_AYAR.url+yol,Object.assign({},opt,{headers:h}));
     const m=await r.text();
     let j=null; if(m){try{j=JSON.parse(m);}catch(e){j=m;}}
     if(!r.ok){
@@ -562,11 +571,12 @@ function kapiMesaj(m,iyi){
   e.textContent=m;e.className='mesaj on '+(iyi?'iyi':'hata');
 }
 function ekran(k){
-  ['Giris','Kayit','Sifre','Yeni'].forEach(x=>$('frm'+x).style.display='none');
+  ['Giris','Kayit','Sifre','Yeni','Kurulum'].forEach(x=>$('frm'+x).style.display='none');
   const b={giris:['Koç girişi','Biyoloji özel ders takip sistemi'],
     kayit:['Yeni koç hesabı','E-posta ve şifre belirle'],
     sifre:['Şifre sıfırlama','E-posta adresine bağlantı gönderilir'],
-    yeni:['Yeni şifre belirle','İki kutuya da aynı şifreyi yaz']}[k];
+    yeni:['Yeni şifre belirle','İki kutuya da aynı şifreyi yaz'],
+    kurulum:['Sunucu ayarı','Bir kez girilir, sonra hatırlanır']}[k];
   $('frm'+k[0].toUpperCase()+k.slice(1)).style.display='';
   $('kapiBaslik').textContent=b[0];$('kapiAlt').textContent=b[1];
   kapiMesaj('');
@@ -621,6 +631,40 @@ async function sifreKaydet(){
 function cikisYap(){
   if(!confirm('Çıkış yapılsın mı?'))return;
   oturumSil();location.reload();
+}
+
+
+/* ---------- sunucu ayarı bulma ---------- */
+let SUNUCU_AYAR=null;
+function sunucuBul(){
+  const bak=[];
+  try{if(typeof SUNUCU!=='undefined')bak.push(SUNUCU);}catch(e){}
+  ['SUNUCU','SB','SUPABASE','Supabase','CONFIG','AYAR','sunucu','supabase'].forEach(a=>{
+    try{if(window[a])bak.push(window[a]);}catch(e){}
+  });
+  for(const a of bak){
+    if(!a||typeof a!=='object')continue;
+    const u=a.url||a.URL||a.supabaseUrl||a.SUPABASE_URL;
+    const k=a.key||a.anon||a.anonKey||a.anon_key||a.supabaseKey||a.SUPABASE_ANON_KEY;
+    if(u&&k)return {url:String(u).replace(/\/+$/,''),key:String(k)};
+  }
+  try{const r=JSON.parse(localStorage.getItem('BIYO_SUNUCU')||'null');
+    if(r&&r.url&&r.key)return r;}catch(e){}
+  return null;
+}
+function sunucuKaydet(){
+  const u=$('suUrl').value.trim().replace(/\/+$/,''), k=$('suKey').value.trim();
+  if(!/^https:\/\/.+\.supabase\.co$/.test(u)){kapiMesaj('Adres https://xxxx.supabase.co biçiminde olmalı.');return;}
+  if(k.length<40){kapiMesaj('Anon anahtarı eksik görünüyor — eyJ ile başlayan uzun diziyi yapıştır.');return;}
+  try{localStorage.setItem('BIYO_SUNUCU',JSON.stringify({url:u,key:k}));}catch(e){}
+  SUNUCU_AYAR={url:u,key:k};
+  kapiMesaj('Kaydedildi, bağlanılıyor…',true);
+  setTimeout(()=>location.reload(),700);
+}
+function kurulumEkrani(neden){
+  ekran('kurulum');
+  $('kurNot').textContent=neden;
+  kapiMesaj('');
 }
 
 /* ---------- veri ---------- */
@@ -1276,8 +1320,13 @@ $('aLogo').onchange=e=>{
 
 (function ac(){
   $('kapiLogo').src=LOGO_VAR;
-  if(typeof SUNUCU==='undefined'||!SUNUCU.url||!SUNUCU.key){
-    kapiMesaj('sunucu.js dosyası bulunamadı ya da içi boş. Koçluk deposundaki dosyayı bu depoya da kopyala.');
+  SUNUCU_AYAR=sunucuBul();
+  if(!SUNUCU_AYAR){
+    const yuklendi=!!window.__sjs;
+    kurulumEkrani(yuklendi
+      ? 'sunucu.js açıldı ama içinde url ve key bulunamadı. Aşağıya elle gir — bir daha sormaz.'
+      : 'sunucu.js dosyası bulunamadı (404). Aşağıya elle gir — bir daha sormaz.');
+    $('kurAlt').textContent=yuklendi?'Dosya yüklendi, biçimi tanınmadı.':'Dosya bu adreste yok.';
     return;
   }
   const h=location.hash||'';
