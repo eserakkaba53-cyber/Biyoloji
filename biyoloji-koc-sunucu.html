@@ -1,0 +1,1295 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biyoser · Özel Ders Koç Paneli</title>
+<style>
+:root{
+  --ink:#122430; --ink-2:#3D5566; --ink-3:#7E939F;
+  --paper:#E9EDEF; --panel:#FFFFFF; --line:#CBD6DB; --line-soft:#E2E9EC;
+  --accent:#186C68; --accent-2:#4FB3A9; --accent-soft:#D8E8E6;
+  --ok:#1F7A55; --warn:#B0710A; --bad:#A73A2C;
+  --ok-bg:#E2F0EA; --warn-bg:#F8EEDA; --bad-bg:#F6E3E0;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"SF Mono",'JetBrains Mono',Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+button{font-family:inherit;font-size:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- giriş ---------- */
+#kapi{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--ink)}
+.kutu{background:#fff;border-radius:14px;padding:26px;width:100%;max-width:400px;box-shadow:0 14px 44px rgba(0,0,0,.3)}
+.kutu-logo{width:64px;height:64px;margin:0 auto 12px;display:block}
+.kutu h2{margin:0 0 3px;font-size:19px;text-align:center}
+.kutu .alt{text-align:center;color:var(--ink-3);font-size:13px;margin-bottom:18px}
+.kutu label{margin-top:11px}
+.kutu .btn{width:100%;margin-top:15px;padding:11px}
+.kutu .kucuk{text-align:center;margin-top:13px;font-size:13px}
+.kutu .kucuk a{color:var(--accent);cursor:pointer;text-decoration:none;font-weight:600}
+.kutu .kucuk a:hover{text-decoration:underline}
+.mesaj{border-radius:8px;padding:9px 12px;font-size:13px;margin-top:12px;display:none}
+.mesaj.on{display:block}
+.mesaj.hata{background:var(--bad-bg);color:var(--bad)}
+.mesaj.iyi{background:var(--ok-bg);color:var(--ok)}
+
+.app{display:none;min-height:100vh}
+.app.on{display:flex}
+
+/* ---------- sol ray ---------- */
+.rail{width:250px;flex:none;background:var(--ink);color:#DCE6EA;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.rail-top{padding:16px;border-bottom:1px solid rgba(255,255,255,.12);display:flex;gap:11px;align-items:center}
+#logoBox{width:46px;height:46px;flex:none;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#logoBox img{width:100%;height:100%;object-fit:contain}
+.brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7FA8A5;font-weight:600}
+.brand b{display:block;font-size:16px;letter-spacing:0;text-transform:none;color:#fff;margin-top:1px;font-weight:600}
+.nav{padding:4px 0}
+#navOgr{flex:1;overflow:auto;min-height:40px}
+.nav button{display:flex;width:100%;gap:9px;align-items:center;text-align:left;background:none;border:0;color:#C6D5DB;padding:9px 16px;border-left:3px solid transparent}
+.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav button.on{background:rgba(255,255,255,.11);border-left-color:var(--accent-2);color:#fff;font-weight:600}
+.nav .badge{margin-left:auto;background:var(--accent-2);color:#08282a;border-radius:20px;font-size:11px;padding:0 7px;font-weight:700}
+.nav .sn{font-size:11px;color:#7E9AA3;display:block;font-weight:400;margin-top:1px}
+.nav button.on .sn{color:#A9CBD1}
+.rail-sec{padding:12px 16px 5px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5F7B85;font-weight:700}
+.rail-add{display:block;width:calc(100% - 24px);margin:6px 12px 4px;background:rgba(79,179,169,.14);color:#8FD3CB;
+  border:1px dashed rgba(79,179,169,.45);border-radius:7px;padding:8px;font-weight:600;font-size:13px}
+.rail-add:hover{background:rgba(79,179,169,.24);color:#fff}
+.rail-foot{padding:10px 16px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;color:#6E8A93}
+.rail-foot button{background:none;border:0;color:#8FB0B9;padding:0;font-size:11px;text-decoration:underline}
+
+/* ---------- ana ---------- */
+.main{flex:1;min-width:0;padding:22px 26px 60px}
+.page{display:none}.page.on{display:block}
+h1{font-size:21px;margin:0 0 3px}
+.sub{color:var(--ink-3);font-size:13px;margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 12px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+label{display:block;font-size:12px;color:var(--ink-2);margin-bottom:4px;font-weight:600}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+textarea{min-height:90px;resize:vertical;font-family:var(--mono);font-size:12.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1;min-width:150px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:7px;padding:9px 15px;font-weight:600}
+.btn:hover{background:#12554F}
+.btn:disabled{opacity:.55;cursor:default}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--paper)}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:6px}
+.btn.danger{background:var(--bad)} .btn.danger:hover{background:#8B2E22}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line);padding:7px 8px;font-weight:700}
+td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tr:hover td{background:#F7FAFA}
+.pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11.5px;font-weight:700}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-bad{background:var(--bad-bg);color:var(--bad)} .p-neu{background:var(--accent-soft);color:var(--accent)}
+.empty{text-align:center;padding:34px 16px;color:var(--ink-3);border:1px dashed var(--line);border-radius:9px;background:#fff}
+.empty b{display:block;color:var(--ink-2);font-size:15px;margin-bottom:4px}
+.mono{font-family:var(--mono);font-size:12.5px}
+.hint{font-size:12px;color:var(--ink-3);margin-top:5px}
+.toast{position:fixed;right:18px;bottom:18px;background:var(--ink);color:#fff;padding:11px 16px;border-radius:8px;z-index:120;box-shadow:0 6px 20px rgba(0,0,0,.22);max-width:340px}
+.ovl{position:fixed;inset:0;background:rgba(18,36,48,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+#calisiyor{position:fixed;top:0;left:0;right:0;height:3px;background:var(--accent-2);transform:scaleX(0);transform-origin:left;transition:transform .3s;z-index:200}
+#calisiyor.on{transform:scaleX(.7)}
+
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 18px;overflow-x:auto}
+.subtabs button{background:none;border:0;padding:9px 14px;color:var(--ink-3);font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+.subtabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.subtabs button:hover{color:var(--ink)}
+.ohead{display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.ohead h1{margin:0}
+.ohead .tag{font-size:12px;color:var(--ink-3)}
+
+/* ---------- ödev arama ---------- */
+#q{padding:11px 13px;font-size:15px;border:1.5px solid var(--line)}
+#q:focus{border-color:var(--accent)}
+.qmeta{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:12px;color:var(--ink-3);gap:10px;flex-wrap:wrap}
+.unite{border:1px solid var(--line);border-radius:9px;margin-bottom:9px;overflow:hidden;background:#fff}
+.unite-h{background:#F2F6F7;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft)}
+.unite-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
+.konu{padding:7px 12px;border-bottom:1px solid var(--line-soft)}
+.konu:last-child{border-bottom:0}
+.konu-h{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:4px}
+.tst{display:flex;gap:9px;align-items:center;padding:4px 2px;border-radius:6px}
+.tst:hover{background:#F4F8F8}
+.tst input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+.tst .ad{flex:1;min-width:0}
+.tst .sq{font-size:11.5px;color:var(--ink-3);font-family:var(--mono);flex:none}
+.tst a{color:var(--accent);text-decoration:none;font-size:12px;flex:none}
+mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
+.tray{position:sticky;bottom:0;background:var(--ink);color:#fff;border-radius:10px;padding:12px 14px;margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 -3px 16px rgba(0,0,0,.14)}
+.tray b{font-size:15px}
+.tray .sp{flex:1}
+.tray input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:auto;min-width:130px}
+.tray input::-webkit-calendar-picker-indicator{filter:invert(1)}
+
+/* ---------- konu haznesi ---------- */
+.knz{border:1px solid var(--line-soft);border-radius:8px;margin-bottom:8px;overflow:hidden}
+.knz-h{background:#F2F6F7;padding:7px 11px;font-weight:700;font-size:12px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.knz-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11px}
+.knz-r{display:flex;gap:9px;align-items:center;padding:6px 11px;border-top:1px solid var(--line-soft)}
+.knz-r .ad{flex:1;min-width:0;font-size:13px}
+.dot{width:13px;height:13px;border-radius:50%;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.dot.b{background:var(--ok);box-shadow:0 0 0 1px var(--ok)}
+.dot.i{background:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.dot.g{background:#E5EBEE}
+.knz-r input{width:58px;padding:3px 6px;font-size:12px;text-align:center;flex:none}
+
+.kod{font-family:var(--mono);font-size:19px;letter-spacing:.08em;background:var(--accent-soft);color:var(--accent);
+  padding:10px 14px;border-radius:9px;display:inline-block;font-weight:700}
+
+@media(max-width:860px){
+  .app.on{flex-direction:column}
+  .rail{width:100%;height:auto;position:static}
+  #navOgr{max-height:180px}
+  .main{padding:16px 14px 50px}
+}
+</style>
+
+<div id="calisiyor"></div>
+
+<!-- ================= GİRİŞ ================= -->
+<div id="kapi">
+  <div class="kutu">
+    <img class="kutu-logo" id="kapiLogo" alt="">
+    <h2 id="kapiBaslik">Koç girişi</h2>
+    <p class="alt" id="kapiAlt">Biyoloji özel ders takip sistemi</p>
+
+    <div id="frmGiris">
+      <label>E-posta</label><input type="email" id="gMail" autocomplete="username">
+      <label>Şifre</label><input type="password" id="gSifre" autocomplete="current-password">
+      <button class="btn" onclick="girisYap()">Giriş yap</button>
+      <p class="kucuk"><a onclick="ekran('sifre')">Şifremi unuttum</a> · <a onclick="ekran('kayit')">Yeni hesap aç</a></p>
+    </div>
+
+    <div id="frmKayit" style="display:none">
+      <label>E-posta</label><input type="email" id="kMail" autocomplete="username">
+      <label>Şifre (en az 6 karakter)</label><input type="password" id="kSifre" autocomplete="new-password">
+      <label>Şifre tekrar</label><input type="password" id="kSifre2" autocomplete="new-password">
+      <button class="btn" onclick="kayitOl()">Hesap aç</button>
+      <p class="kucuk"><a onclick="ekran('giris')">Giriş ekranına dön</a></p>
+    </div>
+
+    <div id="frmSifre" style="display:none">
+      <label>E-posta</label><input type="email" id="sMail" autocomplete="username">
+      <button class="btn" onclick="sifreUnuttum()">Sıfırlama bağlantısı gönder</button>
+      <p class="kucuk"><a onclick="ekran('giris')">Giriş ekranına dön</a></p>
+    </div>
+
+    <div id="frmYeni" style="display:none">
+      <label>Yeni şifre</label><input type="password" id="yS1" autocomplete="new-password">
+      <label>Yeni şifre tekrar</label><input type="password" id="yS2" autocomplete="new-password">
+      <button class="btn" onclick="sifreKaydet()">Şifreyi kaydet</button>
+    </div>
+
+    <div class="mesaj" id="kapiMesaj"></div>
+  </div>
+</div>
+
+<!-- ================= UYGULAMA ================= -->
+<div class="app" id="app">
+  <aside class="rail">
+    <div class="rail-top">
+      <div id="logoBox"></div>
+      <div class="brand">Özel Ders<b id="brandName">Biyoser</b></div>
+    </div>
+    <div class="rail-sec">Öğrenciler</div>
+    <nav class="nav" id="navOgr"></nav>
+    <button class="rail-add" onclick="ogrModal()">+ Yeni öğrenci</button>
+    <div class="rail-sec">Sistem</div>
+    <nav class="nav" id="navSis"></nav>
+    <div class="rail-foot"><span id="kimlik"></span> · <button onclick="cikisYap()">çıkış</button></div>
+  </aside>
+
+  <main class="main">
+    <div id="ogrHead" style="display:none">
+      <div class="ohead"><h1 id="ohAd"></h1><span class="tag" id="ohTag"></span></div>
+      <div class="subtabs" id="subtabs"></div>
+    </div>
+    <div id="bosEkran" class="empty" style="display:none;margin-top:40px"><b>Soldan bir öğrenci seç</b>Ya da "+ Yeni öğrenci" ile ilkini ekle.</div>
+
+    <!-- ÖDEV VER -->
+    <section class="page" id="pg-odev">
+      <p class="sub" style="margin-top:0">Yazmaya başla, testler süzülsün. Kutu boşken tüm katalog listelenir.</p>
+      <div class="card">
+        <input type="text" id="q" placeholder="Ünite, konu ya da test adı yaz…" oninput="odevCiz()">
+        <div class="qmeta"><span id="qInfo"></span>
+          <span style="display:flex;gap:12px;align-items:center">
+            <label style="margin:0;font-weight:600;color:var(--ink-2);display:flex;gap:5px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="qGizle" style="width:auto" onchange="odevCiz()"> Daha önce verdiklerimi gizle</label>
+            <button class="btn ghost sm" onclick="secimTemizle()">Seçimi temizle</button></span></div>
+      </div>
+      <div id="odevList"></div>
+      <div class="tray" id="tray" style="display:none">
+        <b id="traySay">0 test seçildi</b><span class="sp"></span>
+        <input type="date" id="tTeslim">
+        <button class="btn" style="background:var(--accent-2);color:#08282a" onclick="odevOlustur()">Ödevi ata</button>
+      </div>
+    </section>
+
+    <!-- TAKİP -->
+    <section class="page" id="pg-takip">
+      <p class="sub" style="margin-top:0">Deneme grafiği, konu haznesi, verilen ödevler ve gelen sonuçlar.</p>
+      <div id="takipOut"></div>
+    </section>
+
+    <!-- DAVET -->
+    <section class="page" id="pg-davet">
+      <p class="sub" style="margin-top:0">Öğrenciyi sisteme davet et. WhatsApp'ı sadece bunun için kullanacaksın.</p>
+      <div id="davetOut"></div>
+    </section>
+
+    <!-- BİLGİLER -->
+    <section class="page" id="pg-bilgi">
+      <div class="card"><h3>Öğrenci bilgileri</h3>
+        <div class="row">
+          <div><label>Ad soyad</label><input type="text" id="bAd"></div>
+          <div><label>Sınıf / düzey</label><select id="bSinif"><option>9. Sınıf</option><option>10. Sınıf</option><option>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div><label>Hedef</label><input type="text" id="bHedef" placeholder="Örn. AYT Biyoloji 12 net"></div>
+          <div><label>WhatsApp numarası</label><input type="text" id="bTel" placeholder="05XX XXX XX XX"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+          <button class="btn" onclick="bilgiKaydet()">Kaydet</button>
+          <button class="btn danger" onclick="ogrSil(AKTIF)">Öğrenciyi sil</button>
+        </div>
+      </div>
+      <div id="bOzet"></div>
+    </section>
+
+    <!-- TEST KATALOĞU -->
+    <section class="page" id="pg-kat">
+      <h1>Test kataloğu</h1><p class="sub">Drive'daki testlerin adı ve bağlantısı. Öğrencilerin test kütüphanesi de buradan beslenir.</p>
+
+      <div class="card"><h3>Drive'dan çek</h3>
+        <p class="hint" style="margin-top:0;margin-bottom:9px">Köprü adresi kayıtlı. <b>Drive'dan çek</b> düğmesine bas, testlerin gelsin.</p>
+        <div class="row">
+          <div style="flex:3"><label style="color:var(--accent)">Köprü adresi — Apps Script /exec bağlantısı</label><input type="text" id="dUrl" placeholder="https://script.google.com/macros/s/…/exec"></div>
+          <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end;gap:8px">
+            <button class="btn" onclick="driveCek()">Drive'dan çek</button></div>
+        </div>
+        <details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--ink-2);font-weight:600">Bağlanamadıysa: listeyi elle yapıştır</summary>
+          <textarea id="dJson" placeholder='[{"klasor":"Enzimler","ad":"Enzimler Test 1","link":"https://…"}]'></textarea>
+          <button class="btn ghost sm" style="margin-top:8px" onclick="driveYapistir()">Listeyi oku</button></details>
+        <div id="dOut"></div>
+      </div>
+
+      <div class="card"><h3>Tek test ekle</h3>
+        <div class="row">
+          <div><label>Sınıf</label><select id="kSinif" onchange="agacDoldur()"></select></div>
+          <div style="flex:2"><label>Ünite</label><select id="kUnite" onchange="konuDoldur()"></select></div>
+          <div style="flex:2"><label>Konu</label><select id="kKonu"></select></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div style="flex:2"><label>Test adı</label><input type="text" id="kAd" placeholder="Örn. Enzimler – Test 3"></div>
+          <div style="flex:3"><label>Drive bağlantısı <span class="hint" style="font-weight:400">(testin PDF adresi)</span></label><input type="text" id="kLink"></div>
+          <div style="flex:0 0 110px;min-width:110px"><label>Soru sayısı</label><input type="number" id="kSoru" value="20" min="1"></div>
+          <div style="flex:0 0 auto;min-width:auto;display:flex;align-items:flex-end"><button class="btn" onclick="testEkle()">Ekle</button></div>
+        </div>
+      </div>
+
+      <div class="card"><h3>Adlarına göre otomatik eşleştir</h3>
+        <p class="hint" style="margin-top:0;margin-bottom:9px">Drive klasörlerin konu değil kaynak adı taşıyorsa bunu kullan.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="adEslestir(false)">Sadece eşleşmeyenleri tara</button>
+          <button class="btn ghost" onclick="adEslestir(true)">Tüm katalogu tara</button></div>
+        <div id="aeOut"></div>
+      </div>
+
+      <div class="card"><h3>Katalogdaki testler (<span id="katSay">0</span>)</h3>
+        <input type="text" id="katQ" placeholder="Katalogda ara…" oninput="katalogCiz()" style="margin-bottom:10px">
+        <div id="katList"></div>
+        <div style="display:flex;gap:8px;margin-top:11px;flex-wrap:wrap">
+          <button class="btn ghost sm" onclick="katalogDisaAktar()">Katalogu dışa aktar</button>
+          <button class="btn danger sm" onclick="katalogTemizle()">Katalogu temizle</button></div>
+      </div>
+    </section>
+
+    <!-- AYARLAR -->
+    <section class="page" id="pg-ayar">
+      <h1>Ayarlar</h1><p class="sub">Kimlik, adresler ve Drive köprüsü.</p>
+      <div class="card"><h3>Kimlik</h3>
+        <div class="row">
+          <div><label>Panelde görünecek isim</label><input type="text" id="aAd" placeholder="Biyoser"></div>
+          <div><label>WhatsApp numaran</label><input type="text" id="aTel" placeholder="05XX XXX XX XX"></div>
+          <div><label>Logo (PNG/JPG/SVG)</label><input type="file" id="aLogo" accept="image/*" style="padding:6px"></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div><label>Öğrenci panelinin adresi</label><input type="text" id="aOgrUrl" placeholder="https://…/biyoloji-ogrenci-sunucu.html"></div>
+        </div>
+        <p class="hint">Davet bağlantısı bu adresten üretilir. Boşsa öğrenciye kod verirsin, o da paneli açıp elle girer.</p>
+        <button class="btn" style="margin-top:10px" onclick="ayarKaydet()">Kaydet</button>
+      </div>
+
+      <div class="card"><h3>Drive köprüsü</h3>
+        <p class="hint" style="margin-top:0">Test kataloğunu Drive'dan otomatik çekmek için. Bir kez kurulur.</p>
+        <ol style="font-size:13px;color:var(--ink-2);padding-left:18px;line-height:1.85">
+          <li>Testlerin durduğu <b>ana klasörü</b> Drive'da aç. Adres çubuğunda <span class="mono">folders/</span> sonrasındaki uzun kod, klasörün kimliğidir.</li>
+          <li><span class="mono">script.google.com</span> → <b>Yeni proje</b>.</li>
+          <li>Aşağıdaki kodu yapıştır, <span class="mono">KLASOR_ID</span> yerine 1. adımdaki kodu yaz, kaydet.</li>
+          <li><b>Dağıt › Yeni dağıtım › Web uygulaması.</b> Çalıştıran: <b>Ben</b>. Erişimi olanlar: <b>Herkes</b>. Dağıt.</li>
+          <li>Çıkan <span class="mono">/exec</span> adresini Test kataloğu sekmesindeki kutuya yapıştır.</li>
+        </ol>
+        <textarea readonly style="min-height:200px" id="asKod"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn ghost sm" onclick="kopyala('asKod')">Kodu kopyala</button>
+          <button class="btn sm" onclick="kopruTest()">Köprüyü test et</button></div>
+        <div id="ktOut"></div>
+      </div>
+
+      <div class="card"><h3>Hesap</h3>
+        <p class="hint" style="margin-top:0" id="hesapBilgi"></p>
+        <button class="btn ghost" onclick="cikisYap()">Çıkış yap</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="sunucu.js"></script>
+<script>
+/* ==========================================================
+   BİYOSER · ÖZEL DERS KOÇ PANELİ (sunucu sürümü)
+   ========================================================== */
+const VER='2026.08.17-s1';
+const LOGO_VAR='data:image/png;base64,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';
+const AGAC={
+ '9. Sınıf':{
+  'Yaşam Bilimi Biyoloji':['Biyoloji ve Canlıların Ortak Özellikleri','İnorganik Bileşikler (Su, Mineral, Asit-Baz-Tuz)','Karbonhidratlar','Lipitler','Proteinler','Enzimler','Hormonlar','Vitaminler','Nükleik Asitler ve ATP'],
+  'Hücre':['Hücre Teorisi ve Hücrenin Yapısı','Organeller','Çekirdek','Hücre Zarından Madde Geçişi'],
+  'Canlılar Dünyası':['Canlıların Sınıflandırılması','Bakteriler','Arkeler','Protistalar','Mantarlar','Bitkiler','Hayvanlar','Virüsler']},
+ '10. Sınıf':{
+  'Hücre Bölünmeleri':['Mitoz','Eşeysiz Üreme','Mayoz','Eşeyli Üreme'],
+  'Kalıtımın Genel İlkeleri':['Mendel İlkeleri','Eşeye Bağlı Kalıtım','Kan Grupları','Soyağacı','Genetik Uygulamalar'],
+  'Ekosistem Ekolojisi':['Ekosistemin Yapısı','Enerji Akışı ve Besin Zinciri','Madde Döngüleri','Güncel Çevre Sorunları']},
+ '11. Sınıf':{
+  'Denetleyici ve Düzenleyici Sistemler':['Sinir Sistemi','Endokrin Sistem','Duyu Organları'],
+  'Destek ve Hareket Sistemi':['Kemik ve İskelet','Kaslar'],
+  'Sindirim Sistemi':['Sindirim Organları','Sindirim Enzimleri ve Emilim'],
+  'Dolaşım Sistemi':['Kalp ve Damarlar','Kan','Lenf Sistemi','Bağışıklık'],
+  'Solunum Sistemi':['Solunum Organları','Gaz Değişimi ve Taşınması'],
+  'Üriner Sistem':['Boşaltım ve Nefron','İdrar Oluşumu'],
+  'Üreme ve Gelişim':['Üreme Sistemi','Embriyonik Gelişim'],
+  'Komünite ve Popülasyon Ekolojisi':['Komünite Ekolojisi','Süksesyon','Popülasyon Ekolojisi']},
+ '12. Sınıf':{
+  'Genden Proteine':['Nükleik Asitler ve DNA Replikasyonu','Genetik Şifre ve Protein Sentezi','Genetik Mühendisliği ve Biyoteknoloji'],
+  'Canlılarda Enerji Dönüşümleri':['Canlılık ve Enerji','Fotosentez','Kemosentez','Hücresel Solunum','Fermantasyon'],
+  'Bitki Biyolojisi':['Bitkilerin Yapısı','Bitkilerde Madde Taşınması','Bitkilerde Eşeyli Üreme','Bitkilerde Hareket ve Uyarılma'],
+  'Canlılar ve Çevre':['Canlılar ve Çevre İlişkileri']},
+ 'Karma / Deneme':{
+  'Karma':['TYT Biyoloji Karma','AYT Biyoloji Karma','Ünite Karma Tekrar'],
+  'Deneme':['TYT Biyoloji Denemesi','AYT Biyoloji Denemesi','Branş Denemesi']}
+};
+const SURE={
+'Biyoloji ve Canlıların Ortak Özellikleri':2,'İnorganik Bileşikler (Su, Mineral, Asit-Baz-Tuz)':3,
+'Karbonhidratlar':2,'Lipitler':2,'Proteinler':2,'Enzimler':3,'Hormonlar':1,'Vitaminler':2,'Nükleik Asitler ve ATP':3,
+'Hücre Teorisi ve Hücrenin Yapısı':2,'Organeller':4,'Çekirdek':1,'Hücre Zarından Madde Geçişi':5,
+'Canlıların Sınıflandırılması':2,'Bakteriler':3,'Arkeler':1,'Protistalar':2,'Mantarlar':2,'Bitkiler':2,'Hayvanlar':3,'Virüsler':2,
+'Mitoz':3,'Eşeysiz Üreme':2,'Mayoz':4,'Eşeyli Üreme':2,
+'Mendel İlkeleri':5,'Eşeye Bağlı Kalıtım':3,'Kan Grupları':2,'Soyağacı':3,'Genetik Uygulamalar':2,
+'Ekosistemin Yapısı':2,'Enerji Akışı ve Besin Zinciri':3,'Madde Döngüleri':3,'Güncel Çevre Sorunları':1,
+'Sinir Sistemi':6,'Endokrin Sistem':4,'Duyu Organları':4,'Kemik ve İskelet':3,'Kaslar':3,
+'Sindirim Organları':3,'Sindirim Enzimleri ve Emilim':3,'Kalp ve Damarlar':4,'Kan':3,'Lenf Sistemi':1,'Bağışıklık':3,
+'Solunum Organları':2,'Gaz Değişimi ve Taşınması':3,'Boşaltım ve Nefron':3,'İdrar Oluşumu':3,
+'Üreme Sistemi':3,'Embriyonik Gelişim':3,'Komünite Ekolojisi':3,'Süksesyon':1,'Popülasyon Ekolojisi':3,
+'Nükleik Asitler ve DNA Replikasyonu':4,'Genetik Şifre ve Protein Sentezi':5,'Genetik Mühendisliği ve Biyoteknoloji':2,
+'Canlılık ve Enerji':2,'Fotosentez':6,'Kemosentez':1,'Hücresel Solunum':6,'Fermantasyon':2,
+'Bitkilerin Yapısı':4,'Bitkilerde Madde Taşınması':4,'Bitkilerde Eşeyli Üreme':3,'Bitkilerde Hareket ve Uyarılma':2,
+'Canlılar ve Çevre İlişkileri':2};
+function konuDuzlem(){
+  const out=[];
+  for(const s in AGAC) for(const u in AGAC[s]) for(const k of AGAC[s][u]) out.push({sinif:s,unite:u,konu:k});
+  return out;
+}
+function govde(w){return w.slice(0,Math.max(5,Math.floor(w.length*0.75)));}
+function skorla(metin,konu){
+  const n=nrm(metin);
+  const kel=nrm(konu).split(/[^a-z0-9]+/).filter(w=>w.length>=3&&!['icin','olan','veya','ile','bir'].includes(w));
+  if(!kel.length)return 0;
+  let hit=0;kel.forEach(w=>{if(n.includes(govde(w)))hit++;});
+  return hit/kel.length;
+}
+function adTahmin(ad,sinifTercih){
+  let en=null,enS=0;
+  konuDuzlem().forEach(x=>{
+    let s=skorla(ad,x.konu);
+    if(s<0.6)return;
+    if(sinifTercih&&x.sinif===sinifTercih)s+=0.05;
+    if(s>enS||(s===enS&&en&&x.konu.length>en.konu.length)){enS=s;en=x;}
+  });
+  return en;
+}
+function konuTahmin(klasorAdi){
+  const n=nrm(klasorAdi);if(n.length<3)return null;
+  const hepsi=konuDuzlem();
+  let tam=hepsi.find(x=>nrm(x.konu)===n); if(tam)return tam;
+  let kis=hepsi.filter(x=>{const k=nrm(x.konu);return k.length>=4&&(n.includes(k)||k.includes(n));});
+  if(kis.length===1)return kis[0];
+  if(kis.length>1)return kis.sort((a,b)=>nrm(b.konu).length-nrm(a.konu).length)[0];
+  return null;
+}
+function denemeSeri(kalemler){
+  const s={TYT:[],AYT:[]};
+  kalemler.forEach(k=>{
+    if((k.unite||'')!=='Deneme'||k.D==null)return;
+    const tip=/TYT/i.test(k.konu||'')?'TYT':(/AYT/i.test(k.konu||'')?'AYT':'AYT');
+    s[tip].push({t:k.tarih||'',n:net(k.D,k.Y),a:k.ad||''});
+  });
+  s.TYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  s.AYT.sort((a,b)=>(a.t||'').localeCompare(b.t||''));
+  return s;
+}
+function grafikSVG(s){
+  const hepsi=[...s.TYT,...s.AYT];
+  if(!hepsi.length)return '';
+  const W=680,H=230,L=36,R=14,T=14,B=30;
+  const tarih=[...new Set(hepsi.map(x=>x.t))].sort();
+  const maxN=Math.max(4,Math.ceil(Math.max(...hepsi.map(x=>x.n))));
+  const X=t=>L+(tarih.length>1?tarih.indexOf(t)/(tarih.length-1):0.5)*(W-L-R);
+  const Y=n=>H-B-(n/maxN)*(H-T-B);
+  const renk={TYT:'#186C68',AYT:'#B0710A'};
+  let g='';
+  for(let i=0;i<=4;i++){const v=maxN*i/4,y=Y(v);
+    g+=`<line x1="${L}" y1="${y}" x2="${W-R}" y2="${y}" stroke="#E2E9EC" stroke-width="1"/>`+
+       `<text x="${L-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#7E939F">${Math.round(v*10)/10}</text>`;}
+  ['TYT','AYT'].forEach(k=>{
+    const d=s[k];if(!d.length)return;
+    if(d.length>1)g+=`<polyline fill="none" stroke="${renk[k]}" stroke-width="2.2" stroke-linejoin="round"
+      points="${d.map(x=>X(x.t)+','+Y(x.n)).join(' ')}"/>`;
+    d.forEach(x=>{g+=`<circle cx="${X(x.t)}" cy="${Y(x.n)}" r="4" fill="${renk[k]}"><title>${k} · ${x.n} net · ${x.t}</title></circle>`;});
+  });
+  tarih.forEach((t,i)=>{
+    if(tarih.length>7&&i%Math.ceil(tarih.length/6)!==0&&i!==tarih.length-1)return;
+    g+=`<text x="${X(t)}" y="${H-9}" text-anchor="middle" font-size="10" fill="#7E939F">${(t||'').slice(8,10)+'.'+(t||'').slice(5,7)}</text>`;});
+  const ort=k=>s[k].length?(s[k].reduce((a,x)=>a+x.n,0)/s[k].length).toFixed(1):'—';
+  const son=k=>s[k].length?s[k][s[k].length-1].n:'—';
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">${g}</svg>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;margin-top:8px">
+    <span><b style="color:${renk.TYT}">●</b> TYT · ${s.TYT.length} deneme · ort ${ort('TYT')} · son ${son('TYT')}</span>
+    <span><b style="color:${renk.AYT}">●</b> AYT · ${s.AYT.length} deneme · ort ${ort('AYT')} · son ${son('AYT')}</span>
+  </div>`;
+}
+
+const APPS_KOD = `function doGet(e) {
+  const KOK = 'KLASOR_ID';
+  const p = (e && e.parameter) ? e.parameter : {};
+  const kimlik = (KOK.match(/[-\\w]{25,}/) || [KOK])[0];
+  const out = [];
+  tara(DriveApp.getFolderById(kimlik), out);
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function tara(klasor, out) {
+  const dosyalar = klasor.getFiles();
+  while (dosyalar.hasNext()) {
+    const f = dosyalar.next();
+    out.push({ klasor: klasor.getName(), ad: f.getName(), link: f.getUrl() });
+  }
+  const alt = klasor.getFolders();
+  while (alt.hasNext()) tara(alt.next(), out);
+}`;
+
+/* ---------- temel yardımcılar ---------- */
+const $=id=>document.getElementById(id);
+function nrm(x){return String(x==null?'':x).toLocaleLowerCase('tr').replace(/[ıi̇]/g,'i').replace(/ş/g,'s').replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ö/g,'o').replace(/ç/g,'c').replace(/â/g,'a').trim();}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3400);}
+function bugun(){return new Date().toISOString().slice(0,10);}
+function trh(d){if(!d)return '—';const p=String(d).slice(0,10).split('-');return p[2]+'.'+p[1]+'.'+p[0];}
+function net(D,Y){return Math.round(((D||0)-(Y||0)/4)*100)/100;}
+function tel(t){let d=String(t||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('0'))d='90'+d.slice(1);else if(d.length===10)d='90'+d;return d;}
+function mesgul(v){$('calisiyor').classList.toggle('on',!!v);}
+function sr(k){const s=(DB.koc&&DB.koc.sure)||{};return s[k]!=null?s[k]:(SURE[k]||2);}
+
+/* ---------- sunucu katmanı ---------- */
+const OTURUM_ANAHTAR='BIYO_OZ_OTURUM';
+let TOKEN=null, YENILE=null, BITIS=0, KULLANICI=null;
+
+function oturumYaz(j){
+  if(!j||!j.access_token)return;
+  TOKEN=j.access_token; YENILE=j.refresh_token||YENILE;
+  BITIS=Date.now()+((j.expires_in||3600)*1000)-60000;
+  KULLANICI=j.user||KULLANICI;
+  try{localStorage.setItem(OTURUM_ANAHTAR,JSON.stringify({t:TOKEN,y:YENILE,b:BITIS,u:KULLANICI}));}catch(e){}
+}
+function oturumOku(){
+  try{const r=JSON.parse(localStorage.getItem(OTURUM_ANAHTAR)||'null');
+    if(r){TOKEN=r.t;YENILE=r.y;BITIS=r.b;KULLANICI=r.u;return true;}}catch(e){}
+  return false;
+}
+function oturumSil(){TOKEN=YENILE=KULLANICI=null;BITIS=0;try{localStorage.removeItem(OTURUM_ANAHTAR);}catch(e){}}
+
+const API={
+  async ham(yol,opt){
+    opt=opt||{};
+    const h=Object.assign({'apikey':SUNUCU.key,'Content-Type':'application/json'},opt.headers||{});
+    if(TOKEN&&!opt.anon)h['Authorization']='Bearer '+TOKEN;
+    const r=await fetch(SUNUCU.url+yol,Object.assign({},opt,{headers:h}));
+    const m=await r.text();
+    let j=null; if(m){try{j=JSON.parse(m);}catch(e){j=m;}}
+    if(!r.ok){
+      const s=(j&&(j.message||j.error_description||j.msg||j.error))||('Sunucu hatası '+r.status);
+      const e=new Error(s); e.kod=r.status; throw e;
+    }
+    return j;
+  },
+  async req(yol,opt){
+    if(TOKEN&&BITIS&&Date.now()>BITIS&&YENILE)await tokenYenile();
+    return API.ham(yol,opt);
+  },
+  sec:(t,q)=>API.req('/rest/v1/'+t+(q?'?'+q:'')),
+  ekle:(t,v)=>API.req('/rest/v1/'+t,{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(v)}),
+  yama:(t,q,v)=>API.req('/rest/v1/'+t+'?'+q,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(v)}),
+  bas:(t,v,c)=>API.req('/rest/v1/'+t+'?on_conflict='+c,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(v)}),
+  sil:(t,q)=>API.req('/rest/v1/'+t+'?'+q,{method:'DELETE'}),
+  rpc:(f,v)=>API.req('/rest/v1/rpc/'+f,{method:'POST',body:JSON.stringify(v||{})})
+};
+async function tokenYenile(){
+  try{
+    const j=await API.ham('/auth/v1/token?grant_type=refresh_token',
+      {method:'POST',anon:true,body:JSON.stringify({refresh_token:YENILE})});
+    oturumYaz(j);
+  }catch(e){oturumSil();}
+}
+
+/* ---------- giriş ekranı ---------- */
+function kapiMesaj(m,iyi){
+  const e=$('kapiMesaj');
+  if(!m){e.classList.remove('on');return;}
+  e.textContent=m;e.className='mesaj on '+(iyi?'iyi':'hata');
+}
+function ekran(k){
+  ['Giris','Kayit','Sifre','Yeni'].forEach(x=>$('frm'+x).style.display='none');
+  const b={giris:['Koç girişi','Biyoloji özel ders takip sistemi'],
+    kayit:['Yeni koç hesabı','E-posta ve şifre belirle'],
+    sifre:['Şifre sıfırlama','E-posta adresine bağlantı gönderilir'],
+    yeni:['Yeni şifre belirle','İki kutuya da aynı şifreyi yaz']}[k];
+  $('frm'+k[0].toUpperCase()+k.slice(1)).style.display='';
+  $('kapiBaslik').textContent=b[0];$('kapiAlt').textContent=b[1];
+  kapiMesaj('');
+}
+async function girisYap(){
+  const mail=$('gMail').value.trim(), sifre=$('gSifre').value;
+  if(!mail||!sifre){kapiMesaj('E-posta ve şifre gerekli.');return;}
+  mesgul(1);
+  try{
+    const j=await API.ham('/auth/v1/token?grant_type=password',
+      {method:'POST',anon:true,body:JSON.stringify({email:mail,password:sifre})});
+    oturumYaz(j); await baslat();
+  }catch(e){
+    kapiMesaj(/Invalid login/i.test(e.message)?'E-posta ya da şifre yanlış.':e.message);
+  }finally{mesgul(0);}
+}
+async function kayitOl(){
+  const mail=$('kMail').value.trim(), s1=$('kSifre').value, s2=$('kSifre2').value;
+  if(!mail){kapiMesaj('E-posta gerekli.');return;}
+  if(s1.length<6){kapiMesaj('Şifre en az 6 karakter olmalı.');return;}
+  if(s1!==s2){kapiMesaj('Şifreler aynı değil.');return;}
+  mesgul(1);
+  try{
+    const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,body:JSON.stringify({email:mail,password:s1})});
+    if(j&&j.access_token){oturumYaz(j);await baslat();}
+    else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');}
+  }catch(e){
+    kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. Giriş yapmayı dene.':e.message);
+  }finally{mesgul(0);}
+}
+async function sifreUnuttum(){
+  const mail=$('sMail').value.trim();
+  if(!mail){kapiMesaj('E-posta gerekli.');return;}
+  mesgul(1);
+  try{
+    await API.ham('/auth/v1/recover',{method:'POST',anon:true,
+      body:JSON.stringify({email:mail,redirect_to:location.origin+location.pathname})});
+    kapiMesaj('Sıfırlama bağlantısı gönderildi. E-postanı kontrol et.',true);
+  }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
+}
+async function sifreKaydet(){
+  const a=$('yS1').value,b=$('yS2').value;
+  if(a.length<6){kapiMesaj('Şifre en az 6 karakter olmalı.');return;}
+  if(a!==b){kapiMesaj('Şifreler aynı değil.');return;}
+  mesgul(1);
+  try{
+    await API.req('/auth/v1/user',{method:'PUT',body:JSON.stringify({password:a})});
+    kapiMesaj('Şifren değişti. Giriş yapabilirsin.',true);
+    setTimeout(()=>{history.replaceState(null,'',location.pathname);ekran('giris');},1200);
+  }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
+}
+function cikisYap(){
+  if(!confirm('Çıkış yapılsın mı?'))return;
+  oturumSil();location.reload();
+}
+
+/* ---------- veri ---------- */
+let DB={koc:null,ogrenciler:[],katalog:[],odevler:[]};
+let AKTIF=null, ALT='odev', secili=new Set();
+
+function kalemCevir(k){
+  return {id:k.id,testId:k.test_id||'',ad:k.ad,link:k.link||'',unite:k.unite||'',konu:k.konu||'',
+    soru:k.soru||0,durum:k.durum||'bekliyor',D:k.dogru,Y:k.yanlis,B:k.bos,sebep:k.sebep||'',tarih:k.tarih};
+}
+async function veriYukle(){
+  await API.rpc('oz_koc_kur');
+  const [koc,ogr,kat,odv,knu]=await Promise.all([
+    API.sec('oz_koclar','select=*'),
+    API.sec('oz_ogrenciler','select=*&order=olusturma.asc'),
+    API.sec('oz_katalog','select=*&order=ad.asc'),
+    API.sec('oz_odevler','select=*,oz_kalemler(*)&order=verilis.desc'),
+    API.sec('oz_konu','select=*')
+  ]);
+  DB.koc=(koc&&koc[0])||{ad:'Biyoser',tel:'',drive_url:'',ogr_panel_url:'',sure:{},logo:null};
+  DB.koc.sure=DB.koc.sure||{};
+  DB.ogrenciler=(ogr||[]).map(o=>Object.assign({},o,{konuDurum:{}}));
+  (knu||[]).forEach(k=>{const o=DB.ogrenciler.find(x=>x.id===k.ogrenci_id);if(o)o.konuDurum[k.konu]=k.durum;});
+  DB.katalog=(kat||[]).map(t=>({id:t.id,sinif:t.sinif,unite:t.unite,konu:t.konu,ad:t.ad,link:t.link,kaynak:t.kaynak,soru:t.soru}));
+  DB.odevler=(odv||[]).map(o=>({id:o.id,ogrenciId:o.ogrenci_id,verilis:o.verilis,teslim:o.teslim,kendi:o.kendi,
+    kalemler:(o.oz_kalemler||[]).map(kalemCevir)}));
+}
+async function tazele(){
+  mesgul(1);
+  try{await veriYukle();navCiz();if(AKTIF)gitOgr(AKTIF,ALT);}
+  catch(e){toast('Yenilenemedi: '+e.message);}
+  finally{mesgul(0);}
+}
+async function guvenli(is,basarili){
+  mesgul(1);
+  try{const r=await is(); if(basarili)toast(basarili); return r;}
+  catch(e){toast('Kaydedilemedi: '+e.message);throw e;}
+  finally{mesgul(0);}
+}
+
+/* ---------- gezinme ---------- */
+const ALTSEK=[['odev','Ödev ver'],['takip','Takip'],['davet','Davet'],['bilgi','Bilgiler']];
+const SISSEK=[['kat','Test kataloğu'],['ayar','Ayarlar']];
+
+function navCiz(){
+  $('navOgr').innerHTML=DB.ogrenciler.length?DB.ogrenciler.map(o=>{
+    const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
+    const bek=od.flatMap(x=>x.kalemler).filter(k=>k.durum!=='ok').length;
+    const bagli=!!o.auth_id;
+    return `<button data-o="${o.id}" class="${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
+      <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.ad)}</span>
+      <span class="sn">${esc(o.sinif)}${bagli?'':' · davet bekliyor'}</span></span>
+      ${bek?`<span class="badge">${bek}</span>`:''}</button>`;
+  }).join(''):'<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz öğrenci yok.</div>';
+  $('navSis').innerHTML=SISSEK.map(([k,ad])=>{
+    let b='';
+    if(k==='kat'&&DB.katalog.length)b=`<span class="badge">${DB.katalog.length}</span>`;
+    return `<button data-k="${k}" class="${(!AKTIF&&ALT===k)?'on':''}" onclick="gitSis('${k}')">${ad}${b}</button>`;
+  }).join('');
+}
+function altCiz(){
+  $('subtabs').innerHTML=ALTSEK.map(([k,ad])=>
+    `<button class="${ALT===k?'on':''}" onclick="gitAlt('${k}')">${ad}</button>`).join('');
+}
+function sayfaGoster(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const el=$('pg-'+id); if(el)el.classList.add('on');
+}
+function gitOgr(id,alt){
+  const o=DB.ogrenciler.find(x=>x.id===id);
+  if(!o){AKTIF=null;return gitSis('kat');}
+  AKTIF=id; ALT=alt||(['odev','takip','davet','bilgi'].includes(ALT)?ALT:'odev');
+  $('bosEkran').style.display='none';
+  $('ogrHead').style.display='';
+  $('ohAd').textContent=o.ad;
+  $('ohTag').textContent=[o.sinif,o.hedef||null,o.tel||null].filter(Boolean).join(' · ');
+  navCiz();altCiz();gitAlt(ALT);
+}
+function gitAlt(k){
+  ALT=k;altCiz();sayfaGoster(k);
+  if(k==='odev')odevCiz();
+  if(k==='takip')takipCiz();
+  if(k==='davet')davetCiz();
+  if(k==='bilgi')bilgiCiz();
+  window.scrollTo(0,0);
+}
+function gitSis(k){
+  AKTIF=null;ALT=k;
+  $('ogrHead').style.display='none';$('bosEkran').style.display='none';
+  navCiz();sayfaGoster(k);
+  if(k==='kat')katalogCiz();
+  window.scrollTo(0,0);
+}
+function git(k){
+  if(['kat','ayar'].includes(k))return gitSis(k);
+  if(AKTIF)return gitAlt(k); gitSis('kat');
+}
+
+/* ---------- öğrenciler ---------- */
+function ogrModal(){
+  const ov=document.createElement('div');ov.className='ovl';
+  ov.innerHTML=`<div class="card" style="max-width:440px;width:100%;margin:0">
+    <h3>Yeni öğrenci</h3>
+    <label>Ad soyad</label><input type="text" id="mAd" placeholder="Örn. Zehra Y.">
+    <label style="margin-top:9px">Sınıf / düzey</label>
+    <select id="mSinif"><option>9. Sınıf</option><option>10. Sınıf</option><option selected>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select>
+    <label style="margin-top:9px">Hedef</label><input type="text" id="mHedef" placeholder="Örn. AYT Biyoloji 12 net">
+    <label style="margin-top:9px">WhatsApp numarası</label><input type="text" id="mTel" placeholder="05XX XXX XX XX">
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="mOk">Ekle</button><button class="btn ghost" id="mNo">Vazgeç</button></div></div>`;
+  document.body.appendChild(ov);
+  const kapat=()=>ov.remove();
+  ov.querySelector('#mNo').onclick=kapat;
+  ov.onclick=e=>{if(e.target===ov)kapat();};
+  setTimeout(()=>{const el=ov.querySelector('#mAd');if(el.focus)el.focus();},50);
+  ov.querySelector('#mOk').onclick=async()=>{
+    const ad=ov.querySelector('#mAd').value.trim();
+    if(!ad){toast('Öğrencinin adını yaz.');return;}
+    ov.querySelector('#mOk').disabled=true;
+    try{
+      const r=await guvenli(()=>API.ekle('oz_ogrenciler',{koc_id:DB.koc.id,ad,
+        sinif:ov.querySelector('#mSinif').value,hedef:ov.querySelector('#mHedef').value.trim(),
+        tel:ov.querySelector('#mTel').value.trim()}));
+      const y=Object.assign({},r[0],{konuDurum:{}});
+      DB.ogrenciler.push(y);kapat();gitOgr(y.id,'davet');
+      toast(ad+' eklendi. Davet bağlantısını gönder.');
+    }catch(e){ov.querySelector('#mOk').disabled=false;}
+  };
+}
+async function ogrSil(id){
+  const o=DB.ogrenciler.find(x=>x.id===id);if(!o)return;
+  if(!confirm(o.ad+' ve tüm ödev kaydı silinsin mi? Bu işlem geri alınamaz.'))return;
+  await guvenli(()=>API.sil('oz_ogrenciler','id=eq.'+id),'Silindi.');
+  DB.ogrenciler=DB.ogrenciler.filter(x=>x.id!==id);
+  DB.odevler=DB.odevler.filter(x=>x.ogrenciId!==id);
+  AKTIF=null;
+  if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id);
+  else{navCiz();$('ogrHead').style.display='none';document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));$('bosEkran').style.display='';}
+}
+function bilgiCiz(){
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
+  $('bAd').value=o.ad;$('bSinif').value=o.sinif;$('bHedef').value=o.hedef||'';$('bTel').value=o.tel||'';
+  const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
+  const kal=od.flatMap(x=>x.kalemler), bit=kal.filter(k=>k.durum==='ok');
+  const kendi=(DB.odevler.find(x=>x.ogrenciId===o.id&&x.kendi)||{kalemler:[]}).kalemler.length;
+  const ort=bit.length?(bit.reduce((a,k)=>a+net(k.D,k.Y),0)/bit.length).toFixed(1):'—';
+  $('bOzet').innerHTML=`<div class="card"><h3>Özet</h3>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;font-size:13px">
+      <span>Verilen ödev<b style="display:block;font-size:20px" class="mono">${od.length}</b></span>
+      <span>Test<b style="display:block;font-size:20px" class="mono">${bit.length}/${kal.length}</b></span>
+      <span>Kendi çözdüğü<b style="display:block;font-size:20px" class="mono">${kendi}</b></span>
+      <span>Ortalama net<b style="display:block;font-size:20px" class="mono">${ort}</b></span>
+      <span>Hesap<b style="display:block;font-size:15px">${o.auth_id?'<span class="pill p-ok">bağlı</span>':'<span class="pill p-warn">davet bekliyor</span>'}</b></span>
+    </div></div>`;
+}
+async function bilgiKaydet(){
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
+  const ad=$('bAd').value.trim();
+  if(!ad){toast('Ad boş olamaz.');return;}
+  const v={ad,sinif:$('bSinif').value,hedef:$('bHedef').value.trim(),tel:$('bTel').value.trim()};
+  await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+o.id,v),'Kaydedildi.');
+  Object.assign(o,v);gitOgr(o.id,'bilgi');
+}
+
+/* ---------- davet ---------- */
+function davetLinki(o){
+  const base=(DB.koc.ogr_panel_url||'').trim().split('#')[0];
+  return base?base+'#D:'+encodeURIComponent(o.davet_kodu):'';
+}
+function davetCiz(){
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
+  const link=davetLinki(o);
+  if(o.auth_id){
+    $('davetOut').innerHTML=`<div class="card"><h3>Hesap bağlı</h3>
+      <p style="margin:0 0 10px"><span class="pill p-ok">bağlandı</span> ${esc(o.ad)} sisteme giriş yapabiliyor.
+      ${o.davet_kullanildi?`<span class="hint"> · ${trh(o.davet_kullanildi)}</span>`:''}</p>
+      <p class="hint" style="margin-top:0">Ödevler, sonuçlar ve konu takibi artık doğrudan sistem üzerinden akıyor. WhatsApp'a gerek yok.</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn ghost sm" onclick="wa('${o.id}','Panelin: ${esc((DB.koc.ogr_panel_url||'').split('#')[0])}')">Panel adresini yolla</button>
+        <button class="btn ghost sm" onclick="davetSifirla('${o.id}')">Bağlantıyı kopar</button></div></div>`;
+    return;
+  }
+  $('davetOut').innerHTML=`<div class="card"><h3>Davet kodu</h3>
+    <div class="kod">${esc(o.davet_kodu||'—')}</div>
+    <p class="hint">Öğrenci paneli açar, hesabını oluşturur ve bu kodu girer. Kod tek bir hesaba bağlanır.</p>
+    ${link?`<label style="margin-top:14px">Davet bağlantısı</label>
+      <textarea id="davetLink" style="min-height:60px">${esc(link)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+        <button class="btn" onclick="wa('${o.id}')">WhatsApp'ta gönder</button>
+        <button class="btn ghost sm" onclick="kopyala('davetLink')">Kopyala</button></div>
+      <p class="hint">Bağlantı ${link.length} karakter — her telefonda sorunsuz açılır.</p>`
+    :`<div class="empty" style="margin-top:14px"><b>Panel adresi girilmemiş</b>Ayarlar sekmesine öğrenci panelinin adresini yazarsan tıklanabilir davet bağlantısı üretilir. Şimdilik yukarıdaki kodu elle ilet.</div>`}
+    </div>`;
+}
+function wa(id,ekstra){
+  const o=DB.ogrenciler.find(x=>x.id===id);if(!o)return;
+  const link=davetLinki(o);
+  const msg=ekstra?`${o.ad}, ${ekstra}`
+    :`${o.ad}, biyoloji özel ders takip sistemine davetlisin.\n\nBağlantıya dokun, kısa bir hesap oluştur ve içeri gir. Ödevlerin, testlerin ve konu takibin burada olacak.\n\n${link||('Davet kodun: '+o.davet_kodu)}`;
+  const n=tel(o.tel);
+  if(!n)toast('Bu öğrencinin numarası kayıtlı değil — kişi seçme ekranı açılacak.');
+  window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
+}
+async function davetSifirla(id){
+  if(!confirm('Öğrencinin hesap bağlantısı koparılacak ve yeni bir davet kodu üretilecek.\n\nÖdev ve sonuç kayıtları silinmez. Devam?'))return;
+  const r=await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+id,{auth_id:null,davet_kodu:null,davet_kullanildi:null}),'Yeni davet kodu üretildi.');
+  const o=DB.ogrenciler.find(x=>x.id===id);
+  if(r&&r[0])Object.assign(o,{auth_id:null,davet_kodu:r[0].davet_kodu,davet_kullanildi:null});
+  gitOgr(id,'davet');
+}
+
+/* ---------- katalog ---------- */
+function agacDoldur(){
+  const s=$('kSinif').value;
+  $('kUnite').innerHTML=Object.keys(AGAC[s]||{}).map(u=>`<option>${esc(u)}</option>`).join('');
+  konuDoldur();
+}
+function konuDoldur(){
+  const s=$('kSinif').value,u=$('kUnite').value;
+  $('kKonu').innerHTML=((AGAC[s]||{})[u]||[]).map(k=>`<option>${esc(k)}</option>`).join('');
+}
+async function testEkle(){
+  const ad=$('kAd').value.trim(), lnk=$('kLink').value.trim();
+  if(lnk.includes('script.google.com')){
+    if(confirm('Bu bir Apps Script köprü adresi, test bağlantısı değil.\n\nKöprü adresi kutusuna taşınsın mı?')){
+      $('dUrl').value=lnk;$('kLink').value='';
+      await guvenli(()=>API.yama('oz_koclar','id=eq.'+DB.koc.id,{drive_url:lnk}),'Köprü adresi güncellendi.');
+      DB.koc.drive_url=lnk;
+    }
+    return;
+  }
+  if(!ad){toast('Test adı gerekli.');return;}
+  const v={koc_id:DB.koc.id,sinif:$('kSinif').value,unite:$('kUnite').value,konu:$('kKonu').value,
+    ad,link:lnk,kaynak:'',soru:+$('kSoru').value||0};
+  const r=await guvenli(()=>API.ekle('oz_katalog',v),'Eklendi: '+ad);
+  DB.katalog.push(Object.assign({},v,{id:r[0].id}));
+  $('kAd').value='';$('kLink').value='';
+  katalogCiz();navCiz();
+}
+async function testSil(id){
+  await guvenli(()=>API.sil('oz_katalog','id=eq.'+id));
+  DB.katalog=DB.katalog.filter(t=>t.id!==id);secili.delete(id);
+  katalogCiz();navCiz();
+}
+async function katalogTemizle(){
+  if(!DB.katalog.length){toast('Katalog zaten boş.');return;}
+  const n=DB.katalog.length;
+  if(!confirm(n+' test katalogdan silinecek. Verilen ödevler ve sonuçlar etkilenmez.\n\nDevam edilsin mi?'))return;
+  if(!confirm('Emin misin? Bu işlem geri alınamaz.'))return;
+  await guvenli(()=>API.sil('oz_katalog','koc_id=eq.'+DB.koc.id),n+' test silindi.');
+  DB.katalog=[];secili.clear();katalogCiz();odevCiz();navCiz();
+}
+function katalogDisaAktar(){
+  const txt=DB.katalog.map(t=>[t.unite,t.konu,t.ad,t.link,t.soru].join(' | ')).join('\n');
+  const b=new Blob([txt],{type:'text/plain'});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download='test-katalogu.txt';a.click();
+}
+function katalogCiz(){
+  $('katSay').textContent=DB.katalog.length;
+  const q=nrm($('katQ').value);
+  const list=DB.katalog.filter(t=>!q||nrm(t.ad+' '+t.konu+' '+t.unite+' '+t.sinif+' '+(t.kaynak||'')).includes(q));
+  if(!DB.katalog.length){$('katList').innerHTML='<div class="empty"><b>Katalog boş</b>Drive köprünle testlerini çek ya da tek tek ekle.</div>';return;}
+  $('katList').innerHTML='<table><thead><tr><th>Test</th><th>Konu</th><th>Ünite</th><th>Soru</th><th>Bağlantı</th><th></th></tr></thead><tbody>'+
+    list.map(t=>`<tr><td><b>${esc(t.ad)}</b>${t.kaynak?`<div class="hint">${esc(t.kaynak)}</div>`:''}</td>
+    <td>${esc(t.konu)}</td><td>${esc(t.unite)}<div class="hint">${esc(t.sinif)}</div></td>
+    <td class="mono">${t.soru||'—'}</td>
+    <td>${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" style="color:var(--accent)">aç</a>`:'<span class="pill p-warn">yok</span>'}</td>
+    <td style="text-align:right"><button class="btn ghost sm" onclick="konuTasi('${t.id}')">Taşı</button>
+    <button class="btn ghost sm" onclick="testSil('${t.id}')">Sil</button></td></tr>`).join('')+'</tbody></table>';
+}
+function konuTasi(id){
+  const t=DB.katalog.find(x=>x.id===id);if(!t)return;
+  const opt=konuDuzlem().map(x=>`<option value="${esc(x.sinif+'|'+x.unite+'|'+x.konu)}">${esc(x.sinif+' › '+x.unite+' › '+x.konu)}</option>`).join('');
+  const ov=document.createElement('div');ov.className='ovl';
+  ov.innerHTML=`<div class="card" style="max-width:460px;width:100%;margin:0">
+    <h3>Testi taşı</h3><p style="font-size:13px;margin:0 0 12px"><b>${esc(t.ad)}</b><br><span class="hint">Şu an: ${esc(t.sinif+' › '+t.unite+' › '+t.konu)}</span></p>
+    <label>Yeni konu</label><select id="tsSel">${opt}</select>
+    <label style="margin-top:10px">Soru sayısı</label><input type="number" id="tsSoru" min="0" value="${t.soru||0}">
+    <div style="display:flex;gap:8px;margin-top:13px"><button class="btn" id="tsOk">Kaydet</button><button class="btn ghost" id="tsNo">Vazgeç</button></div></div>`;
+  document.body.appendChild(ov);
+  const kapat=()=>ov.remove();
+  ov.querySelector('#tsNo').onclick=kapat;
+  ov.onclick=e=>{if(e.target===ov)kapat();};
+  ov.querySelector('#tsSel').value=t.sinif+'|'+t.unite+'|'+t.konu;
+  ov.querySelector('#tsOk').onclick=async()=>{
+    const p=ov.querySelector('#tsSel').value.split('|');
+    const v={sinif:p[0],unite:p[1],konu:p[2],soru:+ov.querySelector('#tsSoru').value||0};
+    await guvenli(()=>API.yama('oz_katalog','id=eq.'+id,v),'Taşındı.');
+    Object.assign(t,v);kapat();katalogCiz();
+  };
+}
+
+/* ---------- drive köprüsü ---------- */
+let driveHam=null, aeBekleyen=null;
+function skriptId(u){const m=String(u||'').match(/\/s\/([^/]+)\//);return m?m[1]:'';}
+async function driveCek(){
+  const url=$('dUrl').value.trim();
+  if(!url){toast('Önce köprü adresini yapıştır.');return;}
+  if(url!==DB.koc.drive_url){
+    try{await API.yama('oz_koclar','id=eq.'+DB.koc.id,{drive_url:url});DB.koc.drive_url=url;}catch(e){}
+  }
+  $('dOut').innerHTML='<p class="hint" style="margin-top:12px">Drive taranıyor…</p>';
+  try{const r=await fetch(url,{redirect:'follow'});driveOnizle(await r.json());}
+  catch(e){$('dOut').innerHTML='<div class="empty" style="margin-top:12px"><b>Köprüye ulaşılamadı</b>Adresi yeni sekmede aç, çıkan metni "listeyi elle yapıştır" bölümüne koy.</div>';}
+}
+function driveYapistir(){
+  try{driveOnizle(JSON.parse($('dJson').value));}
+  catch(e){toast('Metin okunamadı. Köşeli parantezle başlayan kısmın tamamını kopyala.');}
+}
+function driveOnizle(list){
+  if(!Array.isArray(list)||!list.length){$('dOut').innerHTML='<div class="empty" style="margin-top:12px"><b>Dosya bulunamadı</b>Köprüdeki klasör kimliğini kontrol et.</div>';return;}
+  driveHam=list.filter(x=>x&&x.ad&&x.link);
+  const varLink=new Set(DB.katalog.map(t=>t.link).filter(Boolean));
+  const klasorler={};
+  driveHam.forEach(f=>{const k=f.klasor||'—';(klasorler[k]=klasorler[k]||{yeni:0,eski:0});varLink.has(f.link)?klasorler[k].eski++:klasorler[k].yeni++;});
+  const secOpt=konuDuzlem().map(x=>`<option value="${esc(x.sinif+'|'+x.unite+'|'+x.konu)}">${esc(x.sinif+' › '+x.unite+' › '+x.konu)}</option>`).join('');
+  const adlar=Object.keys(klasorler), eslesen=adlar.filter(k=>konuTahmin(k)).length;
+  const toplamYeni=Object.values(klasorler).reduce((a,c)=>a+c.yeni,0);
+  $('dOut').innerHTML=`<div style="margin-top:14px">
+    <b>${driveHam.length} dosya · ${adlar.length} klasör</b> · ${toplamYeni} yeni test
+    <p class="hint">${eslesen} klasörün konusunu panel kendi buldu. ${adlar.length-eslesen} klasör eşleşmedi.</p>
+    <div class="row" style="margin:10px 0">
+      <div style="flex:0 0 auto;min-width:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="driveAktar(false)">Eşleşenleri aktar (${eslesen} klasör)</button>
+        <button class="btn ghost" onclick="driveAktar(true)">Hepsini aktar</button></div>
+      <div style="flex:0 0 auto;min-width:190px"><label>Eşleşmeyenler hangi sınıfa?</label>
+        <select id="dSinif">${Object.keys(AGAC).map(s=>`<option>${esc(s)}</option>`).join('')}</select></div></div>
+    <label style="display:flex;gap:6px;align-items:center;margin:0 0 10px;font-weight:600;cursor:pointer">
+      <input type="checkbox" id="dAdBazli" style="width:auto" checked> Konuyu önce test adından bul (klasör adı yerine)</label>
+    <table><thead><tr><th>Drive klasörü</th><th>Yeni</th><th>Konu</th></tr></thead><tbody>`+
+    adlar.map(k=>{const c=klasorler[k],t=konuTahmin(k);
+      return `<tr><td><b>${esc(k)}</b></td><td class="mono">${c.yeni}${c.eski?` <span class="hint">(+${c.eski} var)</span>`:''}</td>
+      <td><select data-klasor="${esc(k)}" class="dsel">${t?'':'<option value="">— eşleşmedi —</option>'}${secOpt}</select></td></tr>`;
+    }).join('')+`</tbody></table></div>`;
+  document.querySelectorAll('.dsel').forEach(s=>{const t=konuTahmin(s.dataset.klasor);if(t)s.value=t.sinif+'|'+t.unite+'|'+t.konu;});
+}
+async function driveAktar(hepsi){
+  if(!driveHam)return;
+  const harita={}, sinif=($('dSinif')||{}).value||Object.keys(AGAC)[0];
+  let atlanan=0;
+  document.querySelectorAll('.dsel').forEach(s=>{
+    const k=s.dataset.klasor;
+    if(s.value)harita[k]=s.value.split('|');
+    else if(hepsi)harita[k]=[sinif,'Eşleşmeyen',k];
+    else atlanan++;
+  });
+  const varLink=new Set(DB.katalog.map(t=>t.link).filter(Boolean));
+  const adBazli=(($('dAdBazli')||{}).checked)!==false;
+  const yeni=[];
+  driveHam.forEach(f=>{
+    if(varLink.has(f.link))return;
+    const temiz=String(f.ad).replace(/\.(pdf|docx?|jpe?g|png)$/i,'');
+    let h=harita[f.klasor||'—'];
+    if(adBazli){const x=adTahmin(temiz,h?h[0]:null);if(x)h=[x.sinif,x.unite,x.konu];}
+    if(!h)return;
+    yeni.push({koc_id:DB.koc.id,sinif:h[0],unite:h[1],konu:h[2],kaynak:f.klasor||'',
+      ad:temiz,link:f.link,soru:0});
+  });
+  if(!yeni.length){toast('Eklenecek yeni test yok.');return;}
+  await guvenli(async()=>{
+    for(let i=0;i<yeni.length;i+=200){
+      const r=await API.ekle('oz_katalog',yeni.slice(i,i+200));
+      (r||[]).forEach(t=>DB.katalog.push({id:t.id,sinif:t.sinif,unite:t.unite,konu:t.konu,ad:t.ad,link:t.link,kaynak:t.kaynak,soru:t.soru}));
+    }
+  },yeni.length+' test kataloğa eklendi.');
+  katalogCiz();navCiz();
+  const kalan=driveHam.filter(f=>!varLink.has(f.link)&&!yeni.some(y=>y.link===f.link)).length;
+  if(kalan){$('dOut').innerHTML='';toast(kalan+' test eşleşmediği için atlandı. "Hepsini aktar" ile alabilirsin.');}
+  else{driveHam=null;$('dOut').innerHTML='';$('dJson').value='';}
+}
+function adEslestir(tumu){
+  const hedef=DB.katalog.filter(t=>tumu||t.unite==='Eşleşmeyen');
+  if(!hedef.length){$('aeOut').innerHTML='<div class="empty" style="margin-top:12px"><b>Taranacak test yok</b></div>';return;}
+  const bulunan=[];
+  hedef.forEach(t=>{const x=adTahmin(t.ad,t.sinif);
+    if(x&&!(x.sinif===t.sinif&&x.unite===t.unite&&x.konu===t.konu))bulunan.push({t,x});});
+  if(!bulunan.length){$('aeOut').innerHTML=`<div class="empty" style="margin-top:12px"><b>Eşleşme bulunamadı</b>${hedef.length} test tarandı, adlarından konu çıkarılamadı.</div>`;return;}
+  aeBekleyen=bulunan;
+  $('aeOut').innerHTML=`<div style="margin-top:13px"><b>${bulunan.length} test eşleşti</b> <span class="hint">(${hedef.length} tarandı)</span>
+    <table style="margin-top:8px"><thead><tr><th>Test</th><th>Yeni konu</th></tr></thead><tbody>`+
+    bulunan.slice(0,25).map(b=>`<tr><td>${esc(b.t.ad)}</td><td>${esc(b.x.unite)} › <b>${esc(b.x.konu)}</b><div class="hint">${esc(b.x.sinif)}</div></td></tr>`).join('')+
+    `</tbody></table>${bulunan.length>25?`<p class="hint">…ve ${bulunan.length-25} test daha.</p>`:''}
+    <button class="btn" style="margin-top:11px" onclick="adUygula()">${bulunan.length} testi taşı</button>
+    <button class="btn ghost" style="margin-top:11px" onclick="aeBekleyen=null;document.getElementById('aeOut').innerHTML=''">Vazgeç</button></div>`;
+}
+async function adUygula(){
+  if(!aeBekleyen)return;
+  const liste=aeBekleyen;aeBekleyen=null;
+  await guvenli(async()=>{
+    for(const {t,x} of liste){
+      await API.yama('oz_katalog','id=eq.'+t.id,{sinif:x.sinif,unite:x.unite,konu:x.konu});
+      t.sinif=x.sinif;t.unite=x.unite;t.konu=x.konu;
+    }
+  },liste.length+' test doğru konuya taşındı.');
+  katalogCiz();$('aeOut').innerHTML='';
+}
+async function kopruTest(){
+  const out=$('ktOut');
+  const u=(($('dUrl')||{}).value||DB.koc.drive_url||'').trim();
+  const yaz=h=>out.innerHTML='<div style="margin-top:11px;font-size:13px;line-height:1.9">'+h+'</div>';
+  if(!u){yaz('<b style="color:var(--bad)">Köprü adresi boş.</b> Test kataloğu sekmesindeki kutuya /exec adresini yaz.');return;}
+  yaz('Test ediliyor…');
+  let liste=null;
+  try{const r=await fetch(u);liste=await r.json();}
+  catch(e){yaz('<span style="color:var(--bad)">✗</span> <b>Köprüye ulaşılamıyor.</b><br><span class="hint">Adres yanlış olabilir ya da dağıtımda "Erişimi olanlar: Herkes" seçilmemiştir.</span>');return;}
+  const say=Array.isArray(liste)?liste.length:0;
+  yaz(Array.isArray(liste)
+    ? `<span style="color:var(--ok)">✓</span> Köprü çalışıyor · ${say} dosya görüyor<div style="margin-top:10px" class="pill p-ok">Hazır — "Drive'dan çek" diyebilirsin</div>`
+    : `<span style="color:var(--bad)">✗</span> Köprü cevap verdi ama dosya listesi dönmedi. Klasör kimliği yanlış olabilir.`);
+}
+
+/* ---------- ödev ver ---------- */
+function vurgula(metin,q){
+  if(!q)return esc(metin);
+  const n=nrm(metin),i=n.indexOf(q);
+  if(i<0)return esc(metin);
+  return esc(metin.slice(0,i))+'<mark>'+esc(metin.slice(i,i+q.length))+'</mark>'+esc(metin.slice(i+q.length));
+}
+function gecmis(oid){
+  const m={};
+  if(!oid)return m;
+  DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi).forEach(o=>o.kalemler.forEach(k=>{
+    const g=m[k.testId]=m[k.testId]||{kez:0,son:null,net:null,bekleyen:0};
+    g.kez++;
+    if(k.durum==='ok'){if(!g.son||(k.tarih||'')>=g.son){g.son=k.tarih||o.verilis;g.net=net(k.D,k.Y);}}
+    else g.bekleyen++;
+  }));
+  return m;
+}
+function rozet(g){
+  if(!g)return '';
+  if(g.bekleyen)return '<span class="pill p-warn" title="Verildi ama sonucu gelmedi">verildi · bekliyor</span>';
+  return `<span class="pill p-neu" title="${g.kez} kez verildi">${g.kez}. kez · son ${g.net} net</span>`;
+}
+function odevCiz(){
+  const q=nrm($('q').value), oid=AKTIF||'', G=gecmis(oid), gizle=($('qGizle')||{}).checked;
+  let list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
+  const gizlenen=gizle?list.filter(t=>G[t.id]).length:0;
+  if(gizle)list=list.filter(t=>!G[t.id]);
+  $('qInfo').innerHTML=(q?`${list.length} test eşleşti`:`Tüm katalog · ${DB.katalog.length} test`)+
+    (gizlenen?` <span class="pill p-neu">${gizlenen} tanesi gizlendi</span>`:'');
+  if(!DB.katalog.length){$('odevList').innerHTML='<div class="empty"><b>Önce test kataloğunu doldur</b>Sol menüden Test kataloğu → Drive\'dan çek.</div>';trayCiz();return;}
+  if(!list.length){$('odevList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Farklı bir kelime dene ya da kutuyu boşalt.</div>';trayCiz();return;}
+  const grup={};
+  list.forEach(t=>{const u=t.sinif+' › '+t.unite;(grup[u]=grup[u]||{})[t.konu]=(grup[u][t.konu]||[]).concat(t);});
+  $('odevList').innerHTML=Object.entries(grup).map(([u,konular])=>{
+    const say=Object.values(konular).flat().length;
+    return `<div class="unite"><div class="unite-h">${vurgula(u,q)}<span class="n">${say} test</span></div>`+
+      Object.entries(konular).map(([k,tt])=>`<div class="konu"><div class="konu-h">${vurgula(k,q)}</div>`+
+        tt.map(t=>`<label class="tst">
+          <input type="checkbox" ${secili.has(t.id)?'checked':''} onchange="sec('${t.id}',this.checked)">
+          <span class="ad">${vurgula(t.ad,q)}</span>
+          <span class="sq">${t.soru?t.soru+' soru':''}</span>
+          ${rozet(G[t.id])}
+          ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
+        </label>`).join('')+`</div>`).join('')+`</div>`;
+  }).join('');
+  trayCiz();
+}
+function sec(id,v){v?secili.add(id):secili.delete(id);trayCiz();}
+function secimTemizle(){secili.clear();odevCiz();}
+function trayCiz(){
+  $('tray').style.display=secili.size?'flex':'none';
+  $('traySay').textContent=secili.size+' test seçildi';
+  if(!$('tTeslim').value){const d=new Date();d.setDate(d.getDate()+7);$('tTeslim').value=d.toISOString().slice(0,10);}
+}
+async function odevOlustur(){
+  const oid=AKTIF;
+  if(!oid){toast('Önce soldan bir öğrenci seç.');return;}
+  const G=gecmis(oid), tekrar=[...secili].filter(id=>G[id]);
+  if(tekrar.length){
+    const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id),g=G[id];
+      return '• '+(t?t.ad:'?')+(g.bekleyen?' (hâlâ bekliyor)':' (son: '+g.net+' net)');}).join('\n');
+    if(!confirm(tekrar.length+' test bu öğrenciye daha önce verilmişti:\n\n'+ad+
+      (tekrar.length>5?'\n…ve '+(tekrar.length-5)+' tane daha':'')+
+      '\n\nYine de gönderilsin mi?'))return;
+  }
+  const secilenler=[...secili];
+  const r=await guvenli(async()=>{
+    const od=await API.ekle('oz_odevler',{ogrenci_id:oid,verilis:bugun(),teslim:$('tTeslim').value||null,kendi:false});
+    const odev=od[0];
+    const kal=secilenler.map(id=>{const t=DB.katalog.find(x=>x.id===id);
+      return {odev_id:odev.id,test_id:t.id,ad:t.ad,link:t.link||'',unite:t.unite,konu:t.konu,soru:t.soru||0};});
+    const kr=await API.ekle('oz_kalemler',kal);
+    return {odev,kalemler:(kr||[]).map(kalemCevir)};
+  },secilenler.length+' testlik ödev atandı. Öğrenci panelinde anında görünür.');
+  DB.odevler.unshift({id:r.odev.id,ogrenciId:oid,verilis:r.odev.verilis,teslim:r.odev.teslim,kendi:false,kalemler:r.kalemler});
+  secili.clear();odevCiz();navCiz();
+}
+async function odevSil(id){
+  if(!confirm('Ödev ve içindeki sonuçlar silinsin mi?'))return;
+  await guvenli(()=>API.sil('oz_odevler','id=eq.'+id),'Silindi.');
+  DB.odevler=DB.odevler.filter(o=>o.id!==id);
+  takipCiz();navCiz();
+}
+
+/* ---------- takip ---------- */
+const DURUMAD={b:'Bitti',i:'İşliyorum',g:'Görmedim'};
+function denemeKart(od){
+  const kal=od.flatMap(x=>x.kalemler).filter(k=>k.durum==='ok');
+  const s=denemeSeri(kal);
+  if(!s.TYT.length&&!s.AYT.length)return '';
+  return `<div class="card"><h3>Deneme netleri</h3>${grafikSVG(s)}</div>`;
+}
+function konuHazne(oid){
+  const o=DB.ogrenciler.find(x=>x.id===oid);if(!o)return '';
+  o.konuDurum=o.konuDurum||{};
+  const sinif=Object.keys(AGAC).filter(x=>x!=='Karma / Deneme');
+  let tS=0,bS=0,iS=0,tN=0,bN=0;
+  sinif.forEach(sn=>Object.values(AGAC[sn]).flat().forEach(k=>{
+    const h=sr(k);tS+=h;tN++;const d=o.konuDurum[k];
+    if(d==='b'){bS+=h;bN++;}else if(d==='i')iS+=h;}));
+  const yuzde=tS?Math.round(bS/tS*100):0;
+  let g=`<div class="card"><h3>Konu haznesi</h3>
+    <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;margin-bottom:10px">
+      <span>Tamamlanma<b style="display:block;font-size:22px" class="mono">%${yuzde}</b></span>
+      <span>Biten konu<b style="display:block;font-size:18px" class="mono">${bN}/${tN}</b></span>
+      <span>Toplam süre<b style="display:block;font-size:18px" class="mono">${tS} sa</b></span>
+      <span>Biten<b style="display:block;font-size:18px" class="mono">${bS} sa</b></span>
+      <span>İşlenen<b style="display:block;font-size:18px" class="mono">${iS} sa</b></span>
+      <span>Kalan<b style="display:block;font-size:18px;color:var(--bad)" class="mono">${tS-bS} sa</b></span>
+    </div>
+    <div style="height:9px;background:var(--line-soft);border-radius:5px;overflow:hidden;margin-bottom:14px">
+      <i style="display:block;height:100%;width:${yuzde}%;background:var(--ok)"></i></div>
+    <p class="hint" style="margin-bottom:11px">Daireye tıklayarak durumu değiştir (görmedim → işliyorum → bitti). Sağdaki kutudan konunun süresini düzenle — süre tüm öğrencilerde ortaktır.</p>`;
+  sinif.forEach(sn=>{
+    g+=`<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin:14px 0 7px">${esc(sn)}</div>`;
+    Object.entries(AGAC[sn]).forEach(([u,kk])=>{
+      const top=kk.reduce((a,k)=>a+sr(k),0), bit=kk.filter(k=>o.konuDurum[k]==='b').reduce((a,k)=>a+sr(k),0);
+      g+=`<div class="knz"><div class="knz-h">${esc(u)}<span class="n">${bit}/${top} sa</span></div>`+
+        kk.map(k=>{const d=o.konuDurum[k]||'g', ke=esc(k).replace(/'/g,'&#39;');
+          return `<div class="knz-r">
+            <span class="dot ${d}" title="${DURUMAD[d]}" onclick="konuCevir('${oid}','${ke}')"></span>
+            <span class="ad">${esc(k)}</span>
+            <input type="number" min="0" max="99" value="${sr(k)}" onchange="sureSet('${ke}',this.value)" title="saat">
+            <span class="hint" style="flex:none">sa</span></div>`;}).join('')+`</div>`;
+    });
+  });
+  return g+'</div>';
+}
+async function konuCevir(oid,k){
+  const o=DB.ogrenciler.find(x=>x.id===oid);if(!o)return;
+  o.konuDurum=o.konuDurum||{};
+  const sonraki={g:'i',i:'b',b:'g'}[o.konuDurum[k]||'g'];
+  try{
+    if(sonraki==='g'){await API.sil('oz_konu','ogrenci_id=eq.'+oid+'&konu=eq.'+encodeURIComponent(k));delete o.konuDurum[k];}
+    else{await API.bas('oz_konu',{ogrenci_id:oid,konu:k,durum:sonraki,guncelleme:new Date().toISOString()},'ogrenci_id,konu');o.konuDurum[k]=sonraki;}
+    takipCiz();
+  }catch(e){toast('Kaydedilemedi: '+e.message);}
+}
+async function sureSet(k,v){
+  const n=Math.max(0,Math.min(99,+v||0));
+  const s=Object.assign({},DB.koc.sure||{});
+  if(n===(SURE[k]||2))delete s[k]; else s[k]=n;
+  try{await API.yama('oz_koclar','id=eq.'+DB.koc.id,{sure:s});DB.koc.sure=s;takipCiz();}
+  catch(e){toast('Kaydedilemedi: '+e.message);}
+}
+function takipCiz(){
+  const oid=AKTIF, out=$('takipOut');
+  if(!oid)return;
+  const od=DB.odevler.filter(x=>x.ogrenciId===oid).sort((a,b)=>String(b.verilis).localeCompare(String(a.verilis)));
+  const kal=od.flatMap(x=>x.kalemler).filter(k=>k.durum==='ok');
+  const konu={};
+  kal.forEach(k=>{const c=konu[k.konu]=konu[k.konu]||{D:0,Y:0,B:0,n:0};c.D+=k.D||0;c.Y+=k.Y||0;c.B+=k.B||0;c.n++;});
+  const sirali=Object.entries(konu).map(([k,c])=>{const t=c.D+c.Y+c.B;
+    return {k,oran:t?Math.round(c.D/t*100):0,t,...c};}).sort((a,b)=>a.oran-b.oran);
+  let html='';
+  html+=`<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn ghost sm" onclick="tazele()">Yenile</button></div>`;
+  html+=denemeKart(od);
+  html+=konuHazne(oid);
+  if(sirali.length){
+    html+='<div class="card"><h3>Konu bazlı başarı (en zayıftan)</h3><table><thead><tr><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Doğru %</th><th>Net</th></tr></thead><tbody>'+
+      sirali.map(c=>`<tr><td>${esc(c.k)}</td><td class="mono">${c.D}</td><td class="mono">${c.Y}</td><td class="mono">${c.B}</td>
+      <td><span class="pill ${c.oran>=70?'p-ok':c.oran>=50?'p-warn':'p-bad'}">%${c.oran}</span></td><td class="mono">${net(c.D,c.Y)}</td></tr>`).join('')+'</tbody></table></div>';
+  }
+  if(!od.length){out.innerHTML=html+'<div class="empty"><b>Bu öğrenciye henüz ödev verilmedi</b>Ödev ver sekmesinden başla.</div>';return;}
+  html+=od.map(o=>{
+    if(o.kendi)return `<div class="card" style="border-color:var(--accent-2)"><h3>Kendi çözdükleri
+      <span class="pill p-neu" style="float:right">${o.kalemler.length} test</span></h3>
+      <div class="hint" style="margin-bottom:8px">Öğrencinin ödev dışında çözüp kendi girdiği testler.</div>
+      <table><thead><tr><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Tarih</th></tr></thead><tbody>`+
+      o.kalemler.map(k=>`<tr><td>${esc(k.ad)}</td><td>${esc(k.konu)}</td><td class="mono">${k.D}</td><td class="mono">${k.Y||0}</td>
+      <td class="mono">${k.B||0}</td><td class="mono"><b>${net(k.D,k.Y)}</b></td><td class="hint">${trh(k.tarih)}</td></tr>`).join('')+
+      `</tbody></table></div>`;
+    const bit=o.kalemler.filter(k=>k.durum==='ok').length;
+    const gec=o.teslim&&String(o.teslim)<bugun()&&bit<o.kalemler.length;
+    return `<div class="card"><h3>${trh(o.verilis)} · teslim ${trh(o.teslim)} ${gec?'<span class="pill p-bad">gecikti</span>':''}
+      <span class="pill ${bit===o.kalemler.length?'p-ok':'p-neu'}" style="float:right">${bit}/${o.kalemler.length}</span></h3>
+      <table><thead><tr><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>Hata sebebi</th></tr></thead><tbody>`+
+      o.kalemler.map(k=>`<tr><td>${k.link?`<a href="${esc(k.link)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(k.ad)}</a>`:esc(k.ad)}</td>
+      <td>${esc(k.konu)}</td>
+      ${k.durum==='ok'?`<td class="mono">${k.D}</td><td class="mono">${k.Y||0}</td><td class="mono">${k.B||0}</td><td class="mono"><b>${net(k.D,k.Y)}</b></td><td>${esc(k.sebep)||'—'}</td>`
+        :`<td colspan="5"><span class="pill p-warn">bekliyor</span></td>`}</tr>`).join('')+
+      `</tbody></table>
+      <button class="btn ghost sm" style="margin-top:9px" onclick="odevSil('${o.id}')">Bu ödevi sil</button></div>`;
+  }).join('');
+  out.innerHTML=html;
+}
+
+/* ---------- ayarlar ---------- */
+function logoCiz(){
+  const l=(DB.koc&&DB.koc.logo)||LOGO_VAR;
+  $('logoBox').innerHTML=`<img src="${l}" alt="">`;
+  $('kapiLogo').src=l;
+  $('brandName').textContent=(DB.koc&&DB.koc.ad)||'Biyoser';
+  document.title=((DB.koc&&DB.koc.ad)||'Biyoser')+' · Özel Ders Koç Paneli';
+}
+async function ayarKaydet(){
+  const v={ad:$('aAd').value.trim()||'Biyoser',tel:$('aTel').value.trim(),ogr_panel_url:$('aOgrUrl').value.trim()};
+  await guvenli(()=>API.yama('oz_koclar','id=eq.'+DB.koc.id,v),'Kaydedildi.');
+  Object.assign(DB.koc,v);logoCiz();
+}
+function kopyala(id){
+  const t=$(id);if(!t||!t.value){toast('Kopyalanacak bir şey yok.');return;}
+  t.select&&t.select();
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t.value).then(()=>toast('Kopyalandı.'),()=>{});
+  else{try{document.execCommand('copy');toast('Kopyalandı.');}catch(e){}}
+}
+
+/* ---------- başlatma ---------- */
+async function baslat(){
+  mesgul(1);
+  try{
+    await veriYukle();
+    $('kapi').style.display='none';
+    $('app').classList.add('on');
+    $('kimlik').textContent=(KULLANICI&&KULLANICI.email)||'';
+    $('hesapBilgi').textContent=((KULLANICI&&KULLANICI.email)||'')+' ile giriş yapıldı. Sürüm '+VER;
+    $('asKod').value=APPS_KOD;
+    const sn=Object.keys(AGAC).map(s=>`<option>${esc(s)}</option>`).join('');
+    $('kSinif').innerHTML=sn;agacDoldur();
+    $('aAd').value=DB.koc.ad||'';$('aTel').value=DB.koc.tel||'';
+    $('aOgrUrl').value=DB.koc.ogr_panel_url||'';$('dUrl').value=DB.koc.drive_url||'';
+    logoCiz();navCiz();katalogCiz();
+    if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id,'odev');
+    else{$('bosEkran').style.display='';}
+  }catch(e){
+    if(e.kod===401){oturumSil();kapiMesaj('Oturumun düşmüş, tekrar giriş yap.');ekran('giris');}
+    else kapiMesaj('Veri yüklenemedi: '+e.message);
+    $('kapi').style.display='';$('app').classList.remove('on');
+  }finally{mesgul(0);}
+}
+$('aLogo').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>200*1024){toast('Logo 200 KB\'tan küçük olmalı.');return;}
+  const rd=new FileReader();
+  rd.onload=async()=>{
+    await guvenli(()=>API.yama('oz_koclar','id=eq.'+DB.koc.id,{logo:rd.result}),'Logo yüklendi.');
+    DB.koc.logo=rd.result;logoCiz();
+  };
+  rd.readAsDataURL(f);
+};
+['gSifre','gMail'].forEach(id=>{const el=$(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')girisYap();});});
+
+(function ac(){
+  $('kapiLogo').src=LOGO_VAR;
+  if(typeof SUNUCU==='undefined'||!SUNUCU.url||!SUNUCU.key){
+    kapiMesaj('sunucu.js dosyası bulunamadı ya da içi boş. Koçluk deposundaki dosyayı bu depoya da kopyala.');
+    return;
+  }
+  const h=location.hash||'';
+  if(h.includes('access_token=')&&h.includes('type=recovery')){
+    const p=new URLSearchParams(h.slice(1));
+    TOKEN=p.get('access_token');YENILE=p.get('refresh_token');BITIS=Date.now()+3000000;
+    ekran('yeni');return;
+  }
+  if(oturumOku()&&TOKEN){
+    if(BITIS&&Date.now()>BITIS&&YENILE)tokenYenile().then(()=>TOKEN?baslat():ekran('giris'));
+    else baslat();
+  }else ekran('giris');
+})();
+
+</script>
