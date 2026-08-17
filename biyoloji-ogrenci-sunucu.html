@@ -35,17 +35,19 @@ input,select,textarea{font-family:inherit;font-size:inherit}
 
 #app{display:none}
 #app.on{display:block}
-.top{background:var(--ink);color:#fff;padding:13px 16px;display:flex;gap:11px;align-items:center;position:sticky;top:0;z-index:10}
-#logoBox{width:44px;height:44px;flex:none;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.top{background:var(--ink);color:#fff;padding:20px 16px 18px}
+.top-in{max-width:860px;margin:0 auto;display:flex;gap:16px;align-items:center;justify-content:center;position:relative}
+#logoBox{width:80px;height:80px;flex:none;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center}
 #logoBox img{width:100%;height:100%;object-fit:contain}
-.brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7FA8A5;font-weight:600}
-.brand b{display:block;font-size:16px;letter-spacing:0;text-transform:none;color:#fff;font-weight:600}
-.who{margin-left:auto;text-align:right;font-size:12.5px;color:#9FBAC1}
-.who b{display:block;color:#fff;font-size:15px}
-.tabs{display:flex;background:#1B3140;overflow-x:auto;position:sticky;top:70px;z-index:9}
-.tabs button{background:none;border:0;color:#B7CAD2;padding:11px 15px;border-bottom:3px solid transparent;white-space:nowrap;font-weight:600}
+.brand{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#7FA8A5;font-weight:700}
+.brand b{display:block;font-size:32px;letter-spacing:-.015em;text-transform:none;color:#fff;font-weight:700;line-height:1.15;margin-top:3px}
+.who{position:absolute;right:0;top:50%;transform:translateY(-50%);text-align:right;font-size:13px;color:#9FBAC1}
+.who b{display:block;color:#fff;font-size:17px;font-weight:600}
+.tabs{background:#1B3140;position:sticky;top:0;z-index:10;overflow-x:auto;box-shadow:0 2px 10px rgba(0,0,0,.16)}
+.tabs-in{max-width:860px;margin:0 auto;display:flex;justify-content:center}
+.tabs button{background:none;border:0;color:#B7CAD2;padding:12px 16px;border-bottom:3px solid transparent;white-space:nowrap;font-weight:600;font-size:14.5px}
 .tabs button.on{color:#fff;border-bottom-color:var(--accent-2)}
-.wrap{max-width:780px;margin:0 auto;padding:20px 15px 70px}
+.wrap{max-width:860px;margin:0 auto;padding:22px 15px 70px}
 .page{display:none}.page.on{display:block}
 h1{font-size:20px;margin:0 0 3px}
 .sub{color:var(--ink-3);font-size:13.5px;margin:0 0 18px}
@@ -102,7 +104,27 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 .ktrio button.on[data-v=g]{background:var(--ink-3);border-color:var(--ink-3);color:#fff}
 .ozet{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
 .ozet b{font-family:var(--mono);font-size:15px;display:block;color:var(--ink)}
-@media(max-width:520px){.grid3{grid-template-columns:1fr}.tabs{top:66px}}
+.cozform{border-top:1px solid var(--line-soft);background:#F8FAFB;padding:12px;display:none}
+.cozform.on{display:block}
+.itm.acik{background:#F4F8F8}
+.bolum-h{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700;margin:22px 0 10px;display:flex;align-items:center;gap:9px}
+.bolum-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:12px;letter-spacing:0;text-transform:none}
+@media(max-width:640px){
+  .grid3{grid-template-columns:1fr}
+  .top{padding:16px 14px 14px}
+  .top-in{flex-direction:column;gap:9px;text-align:center}
+  #logoBox{width:66px;height:66px}
+  .brand b{font-size:25px}
+  .who{position:static;transform:none;text-align:center}
+  .tabs-in{justify-content:flex-start}
+  .tabs button{padding:11px 13px;font-size:13.5px}
+}
+  .top{padding:12px 14px}
+  #logoBox{width:50px;height:50px}
+  .brand b{font-size:19px}
+  .tabs{top:80px}
+  .tabs button{padding:11px 13px;font-size:13.5px}
+}
 </style>
 
 <div id="calisiyor"></div>
@@ -159,12 +181,12 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 </div>
 
 <div id="app">
-  <header class="top">
+  <header class="top"><div class="top-in">
     <div id="logoBox"></div>
     <div class="brand">Özel Ders<b id="brandName">Biyoser</b></div>
     <div class="who" id="who"></div>
-  </header>
-  <nav class="tabs" id="tabs"></nav>
+  </div></header>
+  <nav class="tabs"><div class="tabs-in" id="tabs"></div></nav>
   <div class="wrap">
 
     <section class="page on" id="pg-odev">
@@ -179,6 +201,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
         <div class="hint" id="kInfo" style="margin-top:8px"></div>
       </div>
       <div id="kList"></div>
+      <div id="cozulenler"></div>
     </section>
 
     <section class="page" id="pg-konu">
@@ -188,25 +211,6 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <div id="konuList"></div>
     </section>
 
-    <section class="page" id="pg-ekle">
-      <h1>Kendim çözdüm</h1><p class="sub">Ödev dışında çözdüğün testleri de gir. Öğretmenin görür.</p>
-      <div class="card">
-        <div class="errmsg" id="eErr"></div>
-        <label>Test / kaynak adı</label><input type="text" id="eAd" placeholder="Örn. Palme AYT Deneme 4">
-        <div style="margin-top:10px"><label>Sınıf</label><select id="eSinif" onchange="eAgac()"></select></div>
-        <div style="margin-top:10px"><label>Ünite</label><select id="eUnite" onchange="eKonu()"></select></div>
-        <div style="margin-top:10px"><label>Konu</label><select id="eKonu2"></select></div>
-        <div class="grid3" style="margin-top:12px">
-          <div><label>Doğru <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eD" placeholder="zorunlu"></div>
-          <div><label>Yanlış <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eY" placeholder="zorunlu"></div>
-          <div><label>Boş <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="eB" placeholder="zorunlu"></div>
-        </div>
-        <div style="margin-top:10px"><label>Yanlışlarının çoğu neden oldu?</label><select id="eSebep"></select></div>
-        <div style="margin-top:10px"><label>Çözdüğün tarih</label><input type="date" id="eTarih"></div>
-        <button class="btn wide" style="margin-top:13px" onclick="ekstraEkle()">Kaydet</button>
-      </div>
-      <div id="eList"></div>
-    </section>
 
     <section class="page" id="pg-ilerleme">
       <h1>İlerleme</h1><p class="sub">Çözdüğün testlerin özeti ve konu bazlı durumun.</p>
@@ -558,12 +562,11 @@ function ciz(){
   logoCiz();tabCiz();odevCiz();
   const s=aktifSekme();
   if(s==='kutup')kutupCiz(); if(s==='konu')konuCiz();
-  if(s==='ekle')ekleCiz(); if(s==='ilerleme')ilerlemeCiz(); if(s==='ayar')ayarCiz();
+  if(s==='ilerleme')ilerlemeCiz(); if(s==='ayar')ayarCiz();
 }
 
 /* ---------- sekmeler ---------- */
-const SAYFALAR=[['odev','Ödevlerim'],['kutup','Test kütüphanesi'],['konu','Konu takibi'],
-  ['ekle','Kendim çözdüm'],['ilerleme','İlerleme'],['ayar','Ayarlar']];
+const SAYFALAR=[['odev','Ödevlerim'],['kutup','Test kütüphanesi'],['konu','Konu takibi'],['ilerleme','İlerleme'],['ayar','Ayarlar']];
 function aktifSekme(){const b=document.querySelector('#tabs button.on');return b?b.dataset.k:'odev';}
 function tabCiz(){
   const a=aktifSekme();
@@ -578,7 +581,7 @@ function git(k){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   $('pg-'+k).classList.add('on');
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
-  if(k==='kutup')kutupCiz(); if(k==='konu')konuCiz(); if(k==='ekle')ekleCiz();
+  if(k==='kutup')kutupCiz(); if(k==='konu')konuCiz();
   if(k==='ilerleme')ilerlemeCiz(); if(k==='ayar')ayarCiz();
   window.scrollTo(0,0);
 }
@@ -655,41 +658,138 @@ async function kaydetKalem(key){
   try{
     await API.yama('oz_kalemler','id=eq.'+key,v);
     Object.assign(k,{durum:'ok',D,Y,B,sebep:v.sebep,tarih:v.tarih});
-    odevCiz();tabCiz();toast('Kaydedildi · net '+net(D,Y));
+    odevCiz();tabCiz();if($('pg-kutup').classList.contains('on'))kutupCiz();toast('Kaydedildi · net '+net(D,Y));
   }catch(e){err.textContent='Kaydedilemedi: '+e.message;err.classList.add('on');}
   finally{mesgul(0);}
 }
 
+
 /* ---------- test kütüphanesi ---------- */
+function kendiOdev(){return S.odevler.find(o=>o.kendi);}
+function cozulmusHarita(){
+  const m={};
+  S.odevler.forEach(o=>o.kalemler.forEach(k=>{
+    if(!k.testId||k.durum!=='ok')return;
+    const v=Object.assign({},k,{odevden:!o.kendi});
+    if(!m[k.testId]||m[k.testId].odevden)m[k.testId]=v;
+  }));
+  return m;
+}
 function kutupCiz(){
   const L=S.katalog;
+  const C=cozulmusHarita();
   if(!L.length){
     $('kList').innerHTML='<div class="empty"><b>Kütüphane boş</b>Öğretmenin testleri sisteme eklediğinde burada görünecek.</div>';
-    $('kInfo').textContent='';return;
+    $('kInfo').textContent='';$('cozulenler').innerHTML='';return;
   }
   const q=nrm(($('kq')||{}).value||'');
-  const list=L.filter(x=>!q||nrm(x.ad+' '+x.konu+' '+x.unite+' '+(x.kaynak||'')).includes(q));
-  $('kInfo').textContent=q?list.length+' test eşleşti':L.length+' test';
-  if(!list.length){$('kList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Başka bir kelime dene.</div>';return;}
-  const grup={};
-  list.forEach(x=>{(grup[x.konu||'Diğer']=grup[x.konu||'Diğer']||[]).push(x);});
-  $('kList').innerHTML=Object.entries(grup).map(([k,tt])=>`<div class="grp">
-    <div class="grp-h">${vurgu(k,q)}<span class="n">${tt.length} test</span></div>`+
-    tt.map(x=>`<div class="itm"><div class="ad">
-      ${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener">${vurgu(x.ad,q)}</a>`:vurgu(x.ad,q)}
-      ${x.kaynak?`<span style="display:block;font-size:11.5px;color:var(--ink-3)">${esc(x.kaynak)}</span>`:''}</div>
-      <button class="btn ghost sm" onclick="cozdumGec('${x.id}')">Çözdüm</button></div>`).join('')+
-    `</div>`).join('');
+  const acik=L.filter(x=>!C[x.id]);
+  const list=acik.filter(x=>!q||nrm(x.ad+' '+x.konu+' '+x.unite+' '+(x.kaynak||'')).includes(q));
+  const cozulen=Object.values(C);
+  const odevden=cozulen.filter(k=>k.odevden).length;
+  $('kInfo').textContent=(q?list.length+' test eşleşti':acik.length+' çözülmemiş test')+
+    (cozulen.length?' · '+cozulen.length+' test çözüldü'+(odevden?' ('+odevden+' tanesi ödevden)':''):'');
+
+  if(!list.length){
+    $('kList').innerHTML=acik.length
+      ? '<div class="empty"><b>Eşleşme yok</b>Başka bir kelime dene.</div>'
+      : '<div class="empty"><b>Bütün testleri çözdün</b>Aşağıdaki listede hepsi duruyor. Öğretmenin yeni test eklediğinde burada görünür.</div>';
+  }else{
+    const grup={};
+    list.forEach(x=>{(grup[x.konu||'Diğer']=grup[x.konu||'Diğer']||[]).push(x);});
+    $('kList').innerHTML=Object.entries(grup).map(([k,tt])=>`<div class="grp">
+      <div class="grp-h">${vurgu(k,q)}<span class="n">${tt.length} test</span></div>`+
+      tt.map(x=>cozSatir(x,q)).join('')+`</div>`).join('');
+  }
+  cozulenCiz(cozulen);
 }
-function cozdumGec(id){
-  const t=S.katalog.find(x=>x.id===id);if(!t)return;
-  git('ekle');
-  setTimeout(()=>{
-    $('eAd').value=t.ad;
-    if(AGAC[t.sinif]){$('eSinif').value=t.sinif;eAgac();
-      if(AGAC[t.sinif][t.unite]){$('eUnite').value=t.unite;eKonu();$('eKonu2').value=t.konu;}}
-    if($('eD').focus)$('eD').focus();
-  },60);
+function cozSatir(x,q){
+  return `<div id="i_${x.id}">
+    <div class="itm"><div class="ad">
+      ${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener">${vurgu(x.ad,q)}</a>`:vurgu(x.ad,q)}
+      <span style="display:block;font-size:11.5px;color:var(--ink-3)">${esc(x.kaynak||x.unite||'')}${x.soru?' · '+x.soru+' soru':''}</span></div>
+      <button class="btn sm" onclick="cozAc('${x.id}')">Çözdüm</button></div>
+    <div class="cozform" id="cf_${x.id}">
+      <div class="errmsg" id="ce_${x.id}"></div>
+      <div class="grid3">
+        <div><label>Doğru <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="cD_${x.id}" placeholder="zorunlu"></div>
+        <div><label>Yanlış <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="cY_${x.id}" placeholder="zorunlu"></div>
+        <div><label>Boş <span style="color:var(--bad)">*</span></label><input type="number" min="0" id="cB_${x.id}" placeholder="zorunlu"></div>
+      </div>
+      <div style="margin-top:10px"><label>Yanlışlarının çoğu neden oldu?</label>
+        <select id="cS_${x.id}">${SEBEPLER.map(s=>`<option>${s}</option>`).join('')}</select></div>
+      <div style="margin-top:10px"><label>Çözdüğün tarih</label><input type="date" id="cT_${x.id}" value="${bugun()}"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" onclick="cozKaydet('${x.id}')">Kaydet</button>
+        <button class="btn ghost" onclick="cozKapat('${x.id}')">Vazgeç</button>
+      </div>
+    </div></div>`;
+}
+function cozAc(id){
+  document.querySelectorAll('.cozform.on').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.itm.acik').forEach(e=>e.classList.remove('acik'));
+  $('cf_'+id).classList.add('on');
+  const it=$('i_'+id).querySelector('.itm'); if(it)it.classList.add('acik');
+  const d=$('cD_'+id); setTimeout(()=>d.focus&&d.focus(),60);
+}
+function cozKapat(id){$('cf_'+id).classList.remove('on');$('ce_'+id).classList.remove('on');
+  const it=$('i_'+id).querySelector('.itm'); if(it)it.classList.remove('acik');}
+async function cozKaydet(id){
+  const t=S.katalog.find(x=>x.id===id); if(!t)return;
+  const dEl=$('cD_'+id),yEl=$('cY_'+id),bEl=$('cB_'+id),err=$('ce_'+id);
+  [dEl,yEl,bEl].forEach(e=>e.classList.remove('err'));
+  const bos=[];
+  if(dEl.value.trim()===''){dEl.classList.add('err');bos.push('doğru');}
+  if(yEl.value.trim()===''){yEl.classList.add('err');bos.push('yanlış');}
+  if(bEl.value.trim()===''){bEl.classList.add('err');bos.push('boş');}
+  if(bos.length){err.textContent=bos.join(', ')+' sayısını girmeden kaydedemem. Hiç yoksa 0 yaz.';err.classList.add('on');return;}
+  const D=+dEl.value,Y=+yEl.value,B=+bEl.value;
+  if([D,Y,B].some(x=>isNaN(x)||x<0||!Number.isInteger(x))){
+    err.textContent='Sayılar tam ve sıfırdan büyük olmalı.';err.classList.add('on');dEl.classList.add('err');return;}
+  if(t.soru&&D+Y+B>t.soru){
+    err.textContent=`Bu testte ${t.soru} soru var, sen ${D+Y+B} girdin. Tekrar say.`;
+    err.classList.add('on');[dEl,yEl,bEl].forEach(e=>e.classList.add('err'));return;}
+  err.classList.remove('on');
+  mesgul(1);
+  try{
+    let o=kendiOdev();
+    if(!o){
+      const r=await API.ekle('oz_odevler',{ogrenci_id:S.ogrenci.id,kendi:true,verilis:bugun()});
+      o={id:r[0].id,verilis:r[0].verilis,teslim:null,kendi:true,kalemler:[]};
+      S.odevler.push(o);
+    }
+    const kr=await API.ekle('oz_kalemler',{odev_id:o.id,test_id:t.id,ad:t.ad,link:t.link||'',
+      unite:t.unite,konu:t.konu,soru:t.soru||0,durum:'ok',dogru:D,yanlis:Y,bos:B,
+      sebep:$('cS_'+id).value,tarih:$('cT_'+id).value||bugun()});
+    o.kalemler.push(kalemCevir(kr[0]));
+    kutupCiz();
+    toast(t.ad+' çözüldü · net '+net(D,Y));
+  }catch(e){err.textContent='Kaydedilemedi: '+e.message;err.classList.add('on');}
+  finally{mesgul(0);}
+}
+function cozulenCiz(liste){
+  if(!liste.length){$('cozulenler').innerHTML='';return;}
+  const sirali=[...liste].sort((a,b)=>String(b.tarih||'').localeCompare(String(a.tarih||'')));
+  const tD=sirali.reduce((a,k)=>a+(k.D||0),0), tY=sirali.reduce((a,k)=>a+(k.Y||0),0);
+  $('cozulenler').innerHTML=`<div class="bolum-h">Çözülen testler<span class="n">${sirali.length} test · toplam ${net(tD,tY)} net</span></div>`+
+    sirali.map(k=>`<div class="tst done">
+      <div class="tst-h"><div class="ad">
+        ${k.link?`<a href="${esc(k.link)}" target="_blank" rel="noopener">${esc(k.ad)}</a>`:`<b>${esc(k.ad)}</b>`}
+        <span class="k">${esc(k.konu||'')} · ${trh(k.tarih)}</span></div>
+        ${k.odevden?'<span class="pill p-neu">ödevden</span>':`<button class="btn ghost sm" onclick="cozGeriAl('${k.id}')">Geri al</button>`}</div>
+      <div class="sonuc"><span>Doğru <b>${k.D}</b></span><span>Yanlış <b>${k.Y||0}</b></span>
+      <span>Boş <b>${k.B||0}</b></span><span>Net <b>${net(k.D,k.Y)}</b></span>
+      ${k.sebep?`<span>${esc(k.sebep)}</span>`:''}</div></div>`).join('');
+}
+async function cozGeriAl(kalemId){
+  if(!confirm('Bu kayıt silinsin ve test kütüphaneye geri dönsün mü?'))return;
+  mesgul(1);
+  try{
+    await API.sil('oz_kalemler','id=eq.'+kalemId);
+    const o=kendiOdev(); if(o)o.kalemler=o.kalemler.filter(x=>x.id!==kalemId);
+    kutupCiz();toast('Geri alındı.');
+  }catch(e){toast('Silinemedi: '+e.message);}
+  finally{mesgul(0);}
 }
 
 /* ---------- konu takibi ---------- */
@@ -732,74 +832,6 @@ async function konuSet(k,v){
     if(onceki)S.konuDurum[k]=onceki;else delete S.konuDurum[k];
     konuCiz();toast('Kaydedilemedi: '+e.message);
   }
-}
-
-/* ---------- kendim çözdüm ---------- */
-function kendiOdev(){return S.odevler.find(o=>o.kendi);}
-function eAgac(){
-  const sn=$('eSinif').value;
-  $('eUnite').innerHTML=Object.keys(AGAC[sn]||{}).map(u=>`<option>${esc(u)}</option>`).join('');
-  eKonu();
-}
-function eKonu(){
-  const sn=$('eSinif').value,u=$('eUnite').value;
-  $('eKonu2').innerHTML=((AGAC[sn]||{})[u]||[]).map(k=>`<option>${esc(k)}</option>`).join('');
-}
-function ekleCiz(){
-  if(!$('eSinif').options.length){
-    $('eSinif').innerHTML=Object.keys(AGAC).map(x=>`<option>${esc(x)}</option>`).join('');
-    $('eSebep').innerHTML=SEBEPLER.map(x=>`<option>${x}</option>`).join('');
-    if(S.ogrenci&&AGAC[S.ogrenci.sinif])$('eSinif').value=S.ogrenci.sinif;
-    eAgac();
-  }
-  if(!$('eTarih').value)$('eTarih').value=bugun();
-  const o=kendiOdev(), L=o?o.kalemler:[];
-  if(!L.length){$('eList').innerHTML='<div class="empty"><b>Henüz kendi kaydın yok</b>Ödev dışında çözdüğün her testi buraya girersen ilerlemen daha doğru görünür.</div>';return;}
-  $('eList').innerHTML='<div class="card"><h3>Kendi çözdüklerin ('+L.length+')</h3>'+
-    [...L].reverse().map(x=>`<div class="tst done"><div class="tst-h">
-      <div class="ad"><b>${esc(x.ad)}</b><span class="k">${esc(x.konu)} · ${trh(x.tarih)}</span></div>
-      <button class="btn ghost sm" onclick="ekstraSil('${x.id}')">Sil</button></div>
-      <div class="sonuc"><span>Doğru <b>${x.D}</b></span><span>Yanlış <b>${x.Y||0}</b></span><span>Boş <b>${x.B||0}</b></span>
-      <span>Net <b>${net(x.D,x.Y)}</b></span>${x.sebep?`<span>${esc(x.sebep)}</span>`:''}</div></div>`).join('')+'</div>';
-}
-async function ekstraEkle(){
-  const err=$('eErr'), ad=$('eAd').value.trim();
-  const dEl=$('eD'),yEl=$('eY'),bEl=$('eB');
-  [dEl,yEl,bEl].forEach(e=>e.classList.remove('err'));
-  if(!ad){err.textContent='Testin adını yaz — sonradan hangisi olduğunu hatırlaman için.';err.classList.add('on');return;}
-  const bos=[];
-  if(dEl.value.trim()===''){dEl.classList.add('err');bos.push('doğru');}
-  if(yEl.value.trim()===''){yEl.classList.add('err');bos.push('yanlış');}
-  if(bEl.value.trim()===''){bEl.classList.add('err');bos.push('boş');}
-  if(bos.length){err.textContent=bos.join(', ')+' sayısını girmen gerekiyor. Hiç yoksa 0 yaz.';err.classList.add('on');return;}
-  const D=+dEl.value,Y=+yEl.value,B=+bEl.value;
-  if([D,Y,B].some(x=>isNaN(x)||x<0||!Number.isInteger(x))){err.textContent='Sayılar tam ve sıfırdan büyük olmalı.';err.classList.add('on');return;}
-  err.classList.remove('on');
-  mesgul(1);
-  try{
-    let o=kendiOdev();
-    if(!o){
-      const r=await API.ekle('oz_odevler',{ogrenci_id:S.ogrenci.id,kendi:true,verilis:bugun()});
-      o={id:r[0].id,verilis:r[0].verilis,teslim:null,kendi:true,kalemler:[]};
-      S.odevler.push(o);
-    }
-    const kr=await API.ekle('oz_kalemler',{odev_id:o.id,ad,unite:$('eUnite').value,konu:$('eKonu2').value,
-      durum:'ok',dogru:D,yanlis:Y,bos:B,sebep:$('eSebep').value,tarih:$('eTarih').value||bugun()});
-    o.kalemler.push(kalemCevir(kr[0]));
-    $('eAd').value='';dEl.value='';yEl.value='';bEl.value='';
-    ekleCiz();toast('Eklendi · net '+net(D,Y));
-  }catch(e){err.textContent='Kaydedilemedi: '+e.message;err.classList.add('on');}
-  finally{mesgul(0);}
-}
-async function ekstraSil(id){
-  if(!confirm('Bu kayıt silinsin mi?'))return;
-  mesgul(1);
-  try{
-    await API.sil('oz_kalemler','id=eq.'+id);
-    const o=kendiOdev();if(o)o.kalemler=o.kalemler.filter(x=>x.id!==id);
-    ekleCiz();
-  }catch(e){toast('Silinemedi: '+e.message);}
-  finally{mesgul(0);}
 }
 
 /* ---------- ilerleme ---------- */
