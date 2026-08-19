@@ -221,6 +221,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 
     <!-- ÖDEV VER -->
     <section class="page" id="pg-odev">
+      <div id="bekleyenler"></div>
       <p class="sub" style="margin-top:0">Yazmaya başla, testler süzülsün. Kutu boşken tüm katalog listelenir.</p>
       <div class="card">
         <input type="text" id="q" placeholder="Ünite, konu ya da test adı yaz…" oninput="odevCiz()">
@@ -236,6 +237,12 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
         <input type="date" id="tTeslim">
         <button class="btn" style="background:var(--accent-2);color:#08282a" onclick="odevOlustur()">Ödevi ata</button>
       </div>
+    </section>
+
+    <!-- DURUM -->
+    <section class="page" id="pg-durum">
+      <p class="sub" style="margin-top:0">Çözülen her testin doğru, yanlış ve boş sayısı. Yeniden eskiye sıralı.</p>
+      <div id="durumOut"></div>
     </section>
 
     <!-- TAKİP -->
@@ -677,16 +684,25 @@ function kalemCevir(k){
     soru:k.soru||0,durum:k.durum||'bekliyor',D:k.dogru,Y:k.yanlis,B:k.bos,sebep:k.sebep||'',tarih:k.tarih};
 }
 async function veriYukle(){
-  await API.rpc('oz_koc_kur');
+  const benimId=(KULLANICI&&KULLANICI.id)||null;
+  if(!benimId)throw new Error('Oturum bilgisi eksik. Çıkış yapıp tekrar giriş yap.');
+  try{await API.rpc('oz_koc_kur');}
+  catch(e){
+    if(e.kod===404||/oz_koc_kur/.test(e.message||''))
+      throw new Error('Veritabanı kurulumu eksik. 01-biyoloji-veritabani.sql dosyasını Supabase → SQL Editor\'de çalıştır.');
+    throw e;
+  }
   const [koc,ogr,kat,odv,knu]=await Promise.all([
-    API.sec('oz_koclar','select=*'),
-    API.sec('oz_ogrenciler','select=*&order=olusturma.asc'),
-    API.sec('oz_katalog','select=*&order=ad.asc'),
+    API.sec('oz_koclar','select=*&id=eq.'+benimId),
+    API.sec('oz_ogrenciler','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc'),
+    API.sec('oz_katalog','select=*&koc_id=eq.'+benimId+'&order=ad.asc'),
     API.sec('oz_odevler','select=*,oz_kalemler(*)&order=verilis.desc'),
     API.sec('oz_konu','select=*')
   ]);
   DB.koc=(koc&&koc[0])||{ad:'Biyoser',tel:'',drive_url:'',ogr_panel_url:'',sure:{},logo:null};
+  DB.koc.id=DB.koc.id||benimId;
   DB.koc.sure=DB.koc.sure||{};
+  if(DB.koc.id!==benimId)throw new Error('Koç kaydı eşleşmedi. Çıkış yapıp tekrar giriş yap.');
   DB.ogrenciler=(ogr||[]).map(o=>Object.assign({},o,{konuDurum:{}}));
   (knu||[]).forEach(k=>{const o=DB.ogrenciler.find(x=>x.id===k.ogrenci_id);if(o)o.konuDurum[k.konu]=k.durum;});
   DB.katalog=(kat||[]).map(t=>({id:t.id,sinif:t.sinif,unite:t.unite,konu:t.konu,ad:t.ad,link:t.link,kaynak:t.kaynak,soru:t.soru}));
@@ -702,12 +718,16 @@ async function tazele(){
 async function guvenli(is,basarili){
   mesgul(1);
   try{const r=await is(); if(basarili)toast(basarili); return r;}
-  catch(e){toast('Kaydedilemedi: '+e.message);throw e;}
+  catch(e){
+    let m=e.message||'';
+    if(/row-level security/i.test(m))m='Yetki hatası — koç kaydın tanınmadı. Çıkış yapıp tekrar giriş yapman gerekiyor.';
+    else if(/duplicate key/i.test(m))m='Bu kayıt zaten var.';
+    toast('Kaydedilemedi: '+m);throw e;}
   finally{mesgul(0);}
 }
 
 /* ---------- gezinme ---------- */
-const ALTSEK=[['odev','Ödev ver'],['takip','Takip'],['davet','Davet'],['bilgi','Bilgiler']];
+const ALTSEK=[['odev','Ödev ver'],['durum','Durum'],['takip','Takip'],['davet','Davet'],['bilgi','Bilgiler']];
 const SISSEK=[['kat','Test kataloğu'],['ayar','Ayarlar']];
 
 function navCiz(){
@@ -737,7 +757,7 @@ function sayfaGoster(id){
 function gitOgr(id,alt){
   const o=DB.ogrenciler.find(x=>x.id===id);
   if(!o){AKTIF=null;return gitSis('kat');}
-  AKTIF=id; ALT=alt||(['odev','takip','davet','bilgi'].includes(ALT)?ALT:'odev');
+  AKTIF=id; ALT=alt||(ALTSEK.some(x=>x[0]===ALT)?ALT:'odev');
   $('bosEkran').style.display='none';
   $('ogrHead').style.display='';
   $('ohAd').textContent=o.ad;
@@ -747,6 +767,7 @@ function gitOgr(id,alt){
 function gitAlt(k){
   ALT=k;altCiz();sayfaGoster(k);
   if(k==='odev')odevCiz();
+  if(k==='durum')durumCiz();
   if(k==='takip')takipCiz();
   if(k==='davet')davetCiz();
   if(k==='bilgi')bilgiCiz();
@@ -783,6 +804,7 @@ function ogrModal(){
   ov.querySelector('#mOk').onclick=async()=>{
     const ad=ov.querySelector('#mAd').value.trim();
     if(!ad){toast('Öğrencinin adını yaz.');return;}
+    if(!DB.koc||!DB.koc.id){toast('Koç kaydın yüklenemedi. Çıkış yapıp tekrar giriş yap.');return;}
     ov.querySelector('#mOk').disabled=true;
     try{
       const r=await guvenli(()=>API.ekle('oz_ogrenciler',{koc_id:DB.koc.id,ad,
@@ -1076,6 +1098,84 @@ async function kopruTest(){
     : `<span style="color:var(--bad)">✗</span> Köprü cevap verdi ama dosya listesi dönmedi. Klasör kimliği yanlış olabilir.`);
 }
 
+
+/* ---------- bekleyen ödevler ---------- */
+function bekleyenCiz(){
+  const oid=AKTIF, el=$('bekleyenler');
+  if(!oid){el.innerHTML='';return;}
+  const od=DB.odevler.filter(o=>o.ogrenciId===oid&&!o.kendi)
+    .map(o=>({o,bek:o.kalemler.filter(k=>k.durum!=='ok')}))
+    .filter(x=>x.bek.length)
+    .sort((a,b)=>String(a.o.teslim||'9999').localeCompare(String(b.o.teslim||'9999')));
+  if(!od.length){
+    el.innerHTML='<div class="card" style="border-color:#BCDBCE;background:#F6FBF8">'+
+      '<h3 style="margin:0;color:var(--ok)">Bekleyen ödev yok</h3>'+
+      '<div class="hint" style="margin-top:4px">Verdiğin bütün testlerin sonucu geldi. Aşağıdan yeni ödev verebilirsin.</div></div>';
+    return;
+  }
+  const toplam=od.reduce((a,x)=>a+x.bek.length,0);
+  el.innerHTML='<div class="card" style="border-color:var(--warn)">'+
+    `<h3 style="color:var(--warn)">Bekleyen ödevler · ${toplam} test</h3>`+
+    od.map(({o,bek})=>{
+      const gec=o.teslim&&String(o.teslim)<bugun();
+      return `<div style="padding:9px 0;border-top:1px solid var(--line-soft)">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px">
+          <b>${trh(o.verilis)} tarihli ödev</b>
+          <span class="hint">teslim ${trh(o.teslim)}</span>
+          ${gec?'<span class="pill p-bad">gecikti</span>':''}
+          <span class="pill p-warn">${bek.length}/${o.kalemler.length} bekliyor</span>
+          <button class="btn ghost sm" style="margin-left:auto" onclick="odevSil('${o.id}')">Sil</button></div>
+        <div style="margin-top:5px;font-size:13px;color:var(--ink-2);line-height:1.75">`+
+        bek.map(k=>`• ${k.link?`<a href="${esc(k.link)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(k.ad)}</a>`:esc(k.ad)}`).join('<br>')+
+        `</div></div>`;
+    }).join('')+
+    '<div class="hint" style="margin-top:10px">Öğrenci sonucu girdikçe buradan düşer. Yeni ödev vermeden önce bu listeye bak.</div></div>';
+}
+
+/* ---------- durum ---------- */
+function durumCiz(){
+  const oid=AKTIF, out=$('durumOut');
+  if(!oid)return;
+  const sat=[];
+  DB.odevler.filter(o=>o.ogrenciId===oid).forEach(o=>o.kalemler.forEach(k=>{
+    if(k.durum!=='ok')return;
+    sat.push({ad:k.ad,konu:k.konu,unite:k.unite,link:k.link,D:k.D||0,Y:k.Y||0,B:k.B||0,
+      sebep:k.sebep,tarih:k.tarih||o.verilis,kendi:o.kendi});
+  }));
+  sat.sort((a,b)=>String(b.tarih||'').localeCompare(String(a.tarih||'')));
+  if(!sat.length){
+    out.innerHTML='<div class="empty"><b>Henüz çözülmüş test yok</b>Öğrenci bir testin sonucunu girdiğinde burada görünecek.</div>';
+    return;
+  }
+  const D=sat.reduce((a,x)=>a+x.D,0),Y=sat.reduce((a,x)=>a+x.Y,0),B=sat.reduce((a,x)=>a+x.B,0),t=D+Y+B;
+  const ortNet=(sat.reduce((a,x)=>a+net(x.D,x.Y),0)/sat.length).toFixed(1);
+  out.innerHTML=`<div class="card"><h3>Toplam</h3>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;font-size:13px">
+      <span>Çözülen test<b style="display:block;font-size:20px" class="mono">${sat.length}</b></span>
+      <span>Doğru<b style="display:block;font-size:20px;color:var(--ok)" class="mono">${D}</b></span>
+      <span>Yanlış<b style="display:block;font-size:20px;color:var(--bad)" class="mono">${Y}</b></span>
+      <span>Boş<b style="display:block;font-size:20px;color:var(--ink-3)" class="mono">${B}</b></span>
+      <span>Toplam net<b style="display:block;font-size:20px" class="mono">${net(D,Y)}</b></span>
+      <span>Test başı net<b style="display:block;font-size:20px" class="mono">${ortNet}</b></span>
+      <span>Doğru oranı<b style="display:block;font-size:20px" class="mono">%${t?Math.round(D/t*100):0}</b></span>
+    </div></div>
+  <div class="card"><h3>Çözülen testler (yeniden eskiye)</h3>
+    <table><thead><tr><th>Tarih</th><th>Test</th><th>Konu</th><th>D</th><th>Y</th><th>B</th><th>Net</th><th>%</th><th>Sebep</th></tr></thead><tbody>`+
+    sat.map(x=>{
+      const tp=x.D+x.Y+x.B, o=tp?Math.round(x.D/tp*100):0;
+      return `<tr><td class="hint" style="white-space:nowrap">${trh(x.tarih)}</td>
+      <td>${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${esc(x.ad)}</a>`:esc(x.ad)}
+        ${x.kendi?'<span class="pill p-neu" style="margin-left:5px">kendi</span>':''}</td>
+      <td>${esc(x.konu)}</td>
+      <td class="mono" style="color:var(--ok)">${x.D}</td>
+      <td class="mono" style="color:var(--bad)">${x.Y}</td>
+      <td class="mono" style="color:var(--ink-3)">${x.B}</td>
+      <td class="mono"><b>${net(x.D,x.Y)}</b></td>
+      <td><span class="pill ${o>=70?'p-ok':o>=50?'p-warn':'p-bad'}">%${o}</span></td>
+      <td class="hint">${esc(x.sebep)||'—'}</td></tr>`;
+    }).join('')+'</tbody></table></div>';
+}
+
 /* ---------- ödev ver ---------- */
 function vurgula(metin,q){
   if(!q)return esc(metin);
@@ -1106,8 +1206,8 @@ function odevCiz(){
   if(gizle)list=list.filter(t=>!G[t.id]);
   $('qInfo').innerHTML=(q?`${list.length} test eşleşti`:`Tüm katalog · ${DB.katalog.length} test`)+
     (gizlenen?` <span class="pill p-neu">${gizlenen} tanesi gizlendi</span>`:'');
-  if(!DB.katalog.length){$('odevList').innerHTML='<div class="empty"><b>Önce test kataloğunu doldur</b>Sol menüden Test kataloğu → Drive\'dan çek.</div>';trayCiz();return;}
-  if(!list.length){$('odevList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Farklı bir kelime dene ya da kutuyu boşalt.</div>';trayCiz();return;}
+  if(!DB.katalog.length){$('odevList').innerHTML='<div class="empty"><b>Önce test kataloğunu doldur</b>Sol menüden Test kataloğu → Drive\'dan çek.</div>';trayCiz();bekleyenCiz();return;}
+  if(!list.length){$('odevList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Farklı bir kelime dene ya da kutuyu boşalt.</div>';trayCiz();bekleyenCiz();return;}
   const grup={};
   list.forEach(t=>{const u=t.sinif+' › '+t.unite;(grup[u]=grup[u]||{})[t.konu]=(grup[u][t.konu]||[]).concat(t);});
   $('odevList').innerHTML=Object.entries(grup).map(([u,konular])=>{
@@ -1122,7 +1222,7 @@ function odevCiz(){
           ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
         </label>`).join('')+`</div>`).join('')+`</div>`;
   }).join('');
-  trayCiz();
+  trayCiz();bekleyenCiz();
 }
 function sec(id,v){v?secili.add(id):secili.delete(id);trayCiz();}
 function secimTemizle(){secili.clear();odevCiz();}
