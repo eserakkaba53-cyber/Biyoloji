@@ -528,10 +528,36 @@ function kalemCevir(k){
   return {id:k.id,testId:k.test_id||'',ad:k.ad,link:k.link||'',unite:k.unite||'',konu:k.konu||'',
     soru:k.soru||0,durum:k.durum||'bekliyor',D:k.dogru,Y:k.yanlis,B:k.bos,sebep:k.sebep||'',tarih:k.tarih};
 }
+/* Oturum jetonunun sahibi (auth.users.id). Sunucu RLS'i bu kimliğe göre
+   uyguluyor; karşılaştırmayı da onunla yapmak gerekir. */
+function jetonSahibi(){
+  try{
+    var g=(TOKEN||'').split('.')[1]; if(!g) return null;
+    var j=JSON.parse(atob(g.replace(/-/g,'+').replace(/_/g,'/')));
+    return (j&&j.sub)||null;
+  }catch(e){ return null; }
+}
+let KIMLIK_UYARI=false;
+
 async function veriYukle(){
+  KIMLIK_UYARI=false;
   const ogr=await API.sec('oz_ogrenciler','select=*');
   if(!ogr||!ogr.length)return false;
-  S.ogrenci=ogr[0];
+  /* GELEN SATIR GERÇEKTEN BİZİM Mİ?
+     Eskiden ogr[0] alınıyordu — sunucu ne döndürürse o. Bugün RLS tek
+     satır döndürüyor (denendi), ama yarın bir politika gevşerse panel
+     sessizce BAŞKASININ kaydını gösterirdi; hata bile vermezdi.
+     Artık satır sıraya göre değil KİMLİĞE göre seçiliyor. Ayrıca koç
+     hesabıyla bu panele girildiğinde ogr[0] koçun öğrencilerinden biri
+     oluyordu — o durum da buraya takılıyor. */
+  const ben=jetonSahibi();
+  let benim=null;
+  if(ben) benim=ogr.filter(function(o){return o.auth_id===ben;})[0]||null;
+  if(!benim){
+    if(ben || ogr.length>1){ KIMLIK_UYARI=true; return false; }
+    benim=ogr[0];          // jeton çözülemedi ve tek satır var: eski davranış
+  }
+  S.ogrenci=benim;
   const [koc,kat,odv,knu]=await Promise.all([
     API.sec('oz_koclar','select=*'),
     API.sec('oz_katalog','select=*&order=ad.asc'),
@@ -883,7 +909,13 @@ async function baslat(){
     if(!bagli){
       ekran('kod');
       if(BEKLEYEN_KOD)$('kKod').value=BEKLEYEN_KOD;
-      kapiMesaj('Hesabın açık ama henüz bir öğrenciye bağlı değil. Öğretmeninin verdiği kodu gir.');
+      /* KIMLIK_UYARI: sunucu satır döndürdü ama hiçbiri bu hesaba ait
+         değildi. En olası sebep öğretmen hesabıyla öğrenci paneline
+         girilmesi; diğer ihtimal sunucu tarafında bir yetki hatası.
+         İki durumda da panel AÇILMIYOR. */
+      kapiMesaj(KIMLIK_UYARI
+        ? 'Bu hesap buradaki bir öğrenci kaydına bağlı değil.\nÖğrenci hesabınla giriş yaptığından emin ol — öğretmen hesabıysa öğretmen panelini kullan.'
+        : 'Hesabın açık ama henüz bir öğrenciye bağlı değil. Öğretmeninin verdiği kodu gir.');
       return;
     }
     $('kapi').style.display='none';$('app').classList.add('on');
