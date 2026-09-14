@@ -233,7 +233,11 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       </div>
       <div id="odevList"></div>
       <div class="tray" id="tray" style="display:none">
-        <b id="traySay">0 test seçildi</b><span class="sp"></span>
+        <b id="traySay">0 test seçildi</b>
+        <label id="trayGrupSar" style="display:none;margin:0;font-size:12.5px;cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="trayGrup" style="vertical-align:-2px"> <span id="trayGrupAd"></span>
+        </label>
+        <span class="sp"></span>
         <input type="date" id="tTeslim">
         <button class="btn" style="background:var(--accent-2);color:#08282a" onclick="odevOlustur()">Ödevi ata</button>
       </div>
@@ -267,6 +271,10 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
         <div class="row" style="margin-top:10px">
           <div><label>Hedef</label><input type="text" id="bHedef" placeholder="Örn. AYT Biyoloji 12 net"></div>
           <div><label>WhatsApp numarası</label><input type="text" id="bTel" placeholder="05XX XXX XX XX"></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div><label>Sınıf grubu</label><select id="bGrup" onchange="grupAta(AKTIF,this.value)"></select></div>
+          <div></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
           <button class="btn" onclick="bilgiKaydet()">Kaydet</button>
@@ -325,6 +333,12 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
     </section>
 
     <!-- AYARLAR -->
+    <!-- SINIFLAR -->
+    <section class="page" id="pg-grup">
+      <p class="sub" style="margin-top:0">Bir sınıfın paylaşılan davet kodu vardır. O kodla giren herkes aynı sınıfa düşer, ödevi topluca verirsin, takip yine öğrenci başına kalır.</p>
+      <div id="grupOut"></div>
+    </section>
+
     <section class="page" id="pg-ayar">
       <h1>Ayarlar</h1><p class="sub">Kimlik, adresler ve Drive köprüsü.</p>
       <div class="card"><h3>Kimlik</h3>
@@ -692,13 +706,19 @@ async function veriYukle(){
       throw new Error('Veritabanı kurulumu eksik. 01-biyoloji-veritabani.sql dosyasını Supabase → SQL Editor\'de çalıştır.');
     throw e;
   }
-  const [koc,ogr,kat,odv,knu]=await Promise.all([
+  const [koc,ogr,kat,odv,knu,grp]=await Promise.all([
     API.sec('oz_koclar','select=*&id=eq.'+benimId),
     API.sec('oz_ogrenciler','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc'),
     API.sec('oz_katalog','select=*&koc_id=eq.'+benimId+'&order=ad.asc'),
     API.sec('oz_odevler','select=*,oz_kalemler(*)&order=verilis.desc'),
-    API.sec('oz_konu','select=*')
+    API.sec('oz_konu','select=*'),
+    /* Sınıf grupları tablosu henüz kurulmamış olabilir. Kurulum SQL'i
+       çalışmadan panel çökmesin diye hata yutuluyor; GRUP_VAR false
+       kalınca sınıf ekranı "önce kurulumu çalıştır" diyor. */
+    API.sec('oz_gruplar','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc').catch(()=>null)
   ]);
+  DB.gruplar=grp||[];
+  GRUP_VAR=!!grp;
   DB.koc=(koc&&koc[0])||{ad:'Biyoser',tel:'',drive_url:'',ogr_panel_url:'',sure:{},logo:null};
   DB.koc.id=DB.koc.id||benimId;
   DB.koc.sure=DB.koc.sure||{};
@@ -728,7 +748,21 @@ async function guvenli(is,basarili){
 
 /* ---------- gezinme ---------- */
 const ALTSEK=[['odev','Ödev ver'],['durum','Durum'],['takip','Takip'],['davet','Davet'],['bilgi','Bilgiler']];
-const SISSEK=[['kat','Test kataloğu'],['ayar','Ayarlar']];
+const SISSEK=[['grup','Sınıflar'],['kat','Test kataloğu'],['ayar','Ayarlar']];
+/* Sınıf grubu: paylaşılan bir davet koduyla aynı gruba düşen öğrenciler.
+   Ortak ödev verilir, takip öğrenci başına kalır. */
+let GRUP_VAR=false;
+const SUBE_HARF='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function grupOf(id){ return DB.gruplar.find(g=>g.id===id)||null; }
+function grupUyeleri(gid){ return DB.ogrenciler.filter(o=>o.grup_id===gid); }
+/* Varsayılan ad: boştaki ilk şube harfi. Koç istediği gibi değiştirir. */
+function yeniSubeAdi(){
+  for(const h of SUBE_HARF){
+    const ad=h+' Şubesi';
+    if(!DB.gruplar.some(g=>g.ad===ad)) return ad;
+  }
+  return 'Yeni sınıf';
+}
 
 function navCiz(){
   $('navOgr').innerHTML=DB.ogrenciler.length?DB.ogrenciler.map(o=>{
@@ -737,12 +771,13 @@ function navCiz(){
     const bagli=!!o.auth_id;
     return `<button data-o="${o.id}" class="${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
       <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.ad)}</span>
-      <span class="sn">${esc(o.sinif)}${bagli?'':' · davet bekliyor'}</span></span>
+      <span class="sn">${esc(o.sinif)}${(g=>g?' · '+esc(g.ad):'')(grupOf(o.grup_id))}${bagli?'':' · davet bekliyor'}</span></span>
       ${bek?`<span class="badge">${bek}</span>`:''}</button>`;
   }).join(''):'<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz öğrenci yok.</div>';
   $('navSis').innerHTML=SISSEK.map(([k,ad])=>{
     let b='';
     if(k==='kat'&&DB.katalog.length)b=`<span class="badge">${DB.katalog.length}</span>`;
+    if(k==='grup'&&DB.gruplar.filter(g=>!g.arsiv).length)b=`<span class="badge">${DB.gruplar.filter(g=>!g.arsiv).length}</span>`;
     return `<button data-k="${k}" class="${(!AKTIF&&ALT===k)?'on':''}" onclick="gitSis('${k}')">${ad}${b}</button>`;
   }).join('');
 }
@@ -778,10 +813,11 @@ function gitSis(k){
   $('ogrHead').style.display='none';$('bosEkran').style.display='none';
   navCiz();sayfaGoster(k);
   if(k==='kat')katalogCiz();
+  if(k==='grup')grupCiz();
   window.scrollTo(0,0);
 }
 function git(k){
-  if(['kat','ayar'].includes(k))return gitSis(k);
+  if(['grup','kat','ayar'].includes(k))return gitSis(k);
   if(AKTIF)return gitAlt(k); gitSis('kat');
 }
 
@@ -829,6 +865,13 @@ async function ogrSil(id){
 function bilgiCiz(){
   const o=DB.ogrenciler.find(x=>x.id===AKTIF);if(!o)return;
   $('bAd').value=o.ad;$('bSinif').value=o.sinif;$('bHedef').value=o.hedef||'';$('bTel').value=o.tel||'';
+  const gs=$('bGrup');
+  if(gs){
+    const acik=DB.gruplar.filter(g=>!g.arsiv||g.id===o.grup_id);
+    gs.innerHTML='<option value="">— sınıfsız —</option>'+
+      acik.map(g=>`<option value="${g.id}"${o.grup_id===g.id?' selected':''}>${esc(g.ad)}${g.arsiv?' (kapalı)':''}</option>`).join('');
+    gs.disabled=!GRUP_VAR;
+  }
   const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
   const kal=od.flatMap(x=>x.kalemler), bit=kal.filter(k=>k.durum==='ok');
   const kendi=(DB.odevler.find(x=>x.ogrenciId===o.id&&x.kendi)||{kalemler:[]}).kalemler.length;
@@ -849,6 +892,84 @@ async function bilgiKaydet(){
   const v={ad,sinif:$('bSinif').value,hedef:$('bHedef').value.trim(),tel:$('bTel').value.trim()};
   await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+o.id,v),'Kaydedildi.');
   Object.assign(o,v);gitOgr(o.id,'bilgi');
+}
+
+/* ---------- sınıf grupları ---------- */
+function kodLinki(kod){
+  const base=(DB.koc.ogr_panel_url||'').trim().split('#')[0];
+  return base&&kod ? base+'#D:'+encodeURIComponent(kod) : '';
+}
+function grupCiz(){
+  if(!GRUP_VAR){
+    $('grupOut').innerHTML=`<div class="empty"><b>Sınıf grupları henüz kurulmadı</b>
+      Supabase → SQL Editor'de <b>OZEL-DERS-sinif-gruplari.sql</b> dosyasını çalıştır, sonra bu sayfayı yenile.</div>`;
+    return;
+  }
+  const bosta=DB.ogrenciler.filter(o=>!o.grup_id&&!o.arsiv);
+  let h=`<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <button class="btn" onclick="grupEkle()">Yeni sınıf aç</button></div>`;
+
+  h+=DB.gruplar.filter(g=>!g.arsiv).map(g=>{
+    const uye=grupUyeleri(g.id), link=kodLinki(g.davet_kodu);
+    return `<div class="card"><h3>${esc(g.ad)}
+        <span class="hint" style="font-weight:400"> · ${uye.length} öğrenci</span></h3>
+      <div class="kod">${esc(g.davet_kodu||'—')}</div>
+      <p class="hint">Bu kodu sınıfın tamamına ver. Giren her öğrenci kendi hesabını açıp adını yazar, bu sınıfa düşer. Kod tükenmez.</p>
+      ${link?`<label style="margin-top:12px">Sınıf bağlantısı</label>
+        <textarea id="gl-${g.id}" style="min-height:56px">${esc(link)}</textarea>
+        <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+          <button class="btn ghost sm" onclick="kopyala('gl-${g.id}')">Bağlantıyı kopyala</button>`
+       :`<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">`}
+        <button class="btn ghost sm" onclick="grupAdDegis('${g.id}')">Adını değiştir</button>
+        <button class="btn ghost sm" onclick="grupArsivle('${g.id}')">Sınıfı kapat</button>
+      </div>
+      ${uye.length?`<div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">${
+        uye.map(o=>`<button class="pill" style="cursor:pointer;border:0" onclick="gitOgr('${o.id}')">${esc(o.ad)}</button>`).join('')
+      }</div>`:`<p class="hint" style="margin-top:12px">Henüz kimse katılmadı.</p>`}
+    </div>`;
+  }).join('')||`<div class="empty"><b>Henüz sınıf yok</b>Yeni sınıf açınca paylaşılan bir davet kodu üretilir.</div>`;
+
+  if(bosta.length && DB.gruplar.filter(g=>!g.arsiv).length){
+    h+=`<div class="card"><h3>Sınıfı olmayan öğrenciler</h3>
+      <p class="hint">Daha önce tek tek davet ettiklerin. Buradan bir sınıfa taşıyabilirsin.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${
+        bosta.map(o=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span style="flex:1;min-width:120px">${esc(o.ad)} <span class="hint">${esc(o.sinif)}</span></span>
+          <select onchange="grupAta('${o.id}',this.value)">
+            <option value="">sınıfa ata…</option>
+            ${DB.gruplar.filter(g=>!g.arsiv).map(g=>`<option value="${g.id}">${esc(g.ad)}</option>`).join('')}
+          </select></div>`).join('')
+      }</div></div>`;
+  }
+  $('grupOut').innerHTML=h;
+}
+async function grupEkle(){
+  const ad=(prompt('Sınıfın adı:', yeniSubeAdi())||'').trim();
+  if(!ad)return;
+  const r=await guvenli(()=>API.ekle('oz_gruplar',{koc_id:DB.koc.id,ad}),'Sınıf açıldı.');
+  if(r&&r[0]){DB.gruplar.push(r[0]);grupCiz();navCiz();}
+}
+async function grupAdDegis(id){
+  const g=grupOf(id);if(!g)return;
+  const ad=(prompt('Yeni ad:',g.ad)||'').trim();
+  if(!ad||ad===g.ad)return;
+  await guvenli(()=>API.yama('oz_gruplar','id=eq.'+id,{ad}),'Adı değişti.');
+  g.ad=ad;grupCiz();navCiz();
+}
+async function grupArsivle(id){
+  const g=grupOf(id);if(!g)return;
+  const uye=grupUyeleri(id);
+  if(!confirm(`"${g.ad}" kapatılsın mı?\n\n${uye.length} öğrenci sistemde kalır, yalnız sınıf bağı ve paylaşılan kod kapanır. Kod bir daha çalışmaz.`))return;
+  await guvenli(()=>API.yama('oz_gruplar','id=eq.'+id,{arsiv:true}),'Sınıf kapatıldı.');
+  g.arsiv=true;grupCiz();navCiz();
+}
+async function grupAta(ogrId,grupId){
+  const o=DB.ogrenciler.find(x=>x.id===ogrId);if(!o)return;
+  await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+ogrId,{grup_id:grupId||null}),
+    grupId?('Sınıfa taşındı: '+(grupOf(grupId)||{}).ad):'Sınıftan çıkarıldı.');
+  o.grup_id=grupId||null;
+  grupCiz();navCiz();
+  if(AKTIF===ogrId)bilgiCiz();
 }
 
 /* ---------- davet ---------- */
@@ -1229,29 +1350,72 @@ function secimTemizle(){secili.clear();odevCiz();}
 function trayCiz(){
   $('tray').style.display=secili.size?'flex':'none';
   $('traySay').textContent=secili.size+' test seçildi';
+  /* Seçili öğrencinin sınıfı varsa "tüm sınıfa ver" seçeneği çıkar.
+     Ayrı bir ekran yerine buraya konuldu: koç zaten testleri seçmiş
+     durumda, tek kutu işaretlemesi yetiyor. */
+  const o=DB.ogrenciler.find(x=>x.id===AKTIF), g=o?grupOf(o.grup_id):null;
+  const sar=$('trayGrupSar');
+  if(sar){
+    const uye=g?grupUyeleri(g.id).length:0;
+    sar.style.display=(g&&uye>1)?'':'none';
+    if(g&&uye>1)$('trayGrupAd').textContent=g.ad+' (tümü, '+uye+' kişi)';
+    else $('trayGrup').checked=false;
+  }
   if(!$('tTeslim').value){const d=new Date();d.setDate(d.getDate()+7);$('tTeslim').value=d.toISOString().slice(0,10);}
 }
 async function odevOlustur(){
   const oid=AKTIF;
   if(!oid){toast('Önce soldan bir öğrenci seç.');return;}
-  const G=gecmis(oid), tekrar=[...secili].filter(id=>G[id]);
-  if(tekrar.length){
-    const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id),g=G[id];
-      return '• '+(t?t.ad:'?')+(g.bekleyen?' (hâlâ bekliyor)':' (son: '+g.net+' net)');}).join('\n');
-    if(!confirm(tekrar.length+' test bu öğrenciye daha önce verilmişti:\n\n'+ad+
-      (tekrar.length>5?'\n…ve '+(tekrar.length-5)+' tane daha':'')+
-      '\n\nYine de gönderilsin mi?'))return;
+  const o=DB.ogrenciler.find(x=>x.id===oid);
+  const grupMu=!!($('trayGrup')&&$('trayGrup').checked);
+  const g=grupMu&&o?grupOf(o.grup_id):null;
+  /* Gruba verirken ödev, grubun HER ÜYESİNE ayrı satır olarak yazılır.
+     Ortak bir ödev satırı tutup durumu paylaştırmak, iki öğrencinin
+     birbirinin sonucunu ezmesi demekti. Ayrı satır, takibi kendiliğinden
+     öğrenci başına bırakıyor ve ödev şemasına hiç dokunmuyor. */
+  const hedefler = g ? grupUyeleri(g.id).map(x=>x.id) : [oid];
+
+  /* Tekrar uyarısı: gruba verirken "kimde tekrar" bilgisi kalabalık
+     yapıyor, kaç kişide tekrar olduğunu söylemek yetiyor. */
+  if(g){
+    const tekrarli=hedefler.filter(id=>{const G=gecmis(id);return [...secili].some(t=>G[t]);});
+    if(tekrarli.length && !confirm(
+      `${g.ad}: ${hedefler.length} öğrenciye ${secili.size} test gidecek.\n\n`+
+      `${tekrarli.length} öğrencide bu testlerden en az biri daha önce verilmişti.\n\nDevam edilsin mi?`))return;
+    if(!tekrarli.length && !confirm(`${g.ad}: ${hedefler.length} öğrenciye ${secili.size} test gidecek. Devam?`))return;
+  }else{
+    const G=gecmis(oid), tekrar=[...secili].filter(id=>G[id]);
+    if(tekrar.length){
+      const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id),gg=G[id];
+        return '• '+(t?t.ad:'?')+(gg.bekleyen?' (hâlâ bekliyor)':' (son: '+gg.net+' net)');}).join('\n');
+      if(!confirm(tekrar.length+' test bu öğrenciye daha önce verilmişti:\n\n'+ad+
+        (tekrar.length>5?'\n…ve '+(tekrar.length-5)+' tane daha':'')+
+        '\n\nYine de gönderilsin mi?'))return;
+    }
   }
-  const secilenler=[...secili];
+
+  const secilenler=[...secili], teslim=$('tTeslim').value||null;
   const r=await guvenli(async()=>{
-    const od=await API.ekle('oz_odevler',{ogrenci_id:oid,verilis:bugun(),teslim:$('tTeslim').value||null,kendi:false});
-    const odev=od[0];
-    const kal=secilenler.map(id=>{const t=DB.katalog.find(x=>x.id===id);
-      return {odev_id:odev.id,test_id:t.id,ad:t.ad,link:t.link||'',unite:t.unite,konu:t.konu,soru:t.soru||0};});
+    const od=await API.ekle('oz_odevler',
+      hedefler.map(id=>({ogrenci_id:id,verilis:bugun(),teslim,kendi:false})));
+    const kal=[];
+    (od||[]).forEach(odev=>secilenler.forEach(id=>{
+      const t=DB.katalog.find(x=>x.id===id);
+      kal.push({odev_id:odev.id,test_id:t.id,ad:t.ad,link:t.link||'',unite:t.unite,konu:t.konu,soru:t.soru||0});
+    }));
     const kr=await API.ekle('oz_kalemler',kal);
-    return {odev,kalemler:(kr||[]).map(kalemCevir)};
-  },secilenler.length+' testlik ödev atandı. Öğrenci panelinde anında görünür.');
-  DB.odevler.unshift({id:r.odev.id,ogrenciId:oid,verilis:r.odev.verilis,teslim:r.odev.teslim,kendi:false,kalemler:r.kalemler});
+    /* Ham satırlar saklanıyor: kalemCevir odev_id'yi düşürüyor, çevirdikten
+       sonra kalemi hangi ödeve koyacağımızı bilemiyoruz. */
+    return {odevler:od||[],ham:kr||[]};
+  }, g ? `${g.ad}: ${hedefler.length} öğrenciye ${secilenler.length} test atandı.`
+       : secilenler.length+' testlik ödev atandı. Öğrenci panelinde anında görünür.');
+
+  r.odevler.forEach(odev=>{
+    DB.odevler.unshift({id:odev.id,ogrenciId:odev.ogrenci_id,verilis:odev.verilis,
+      teslim:odev.teslim,kendi:false,
+      kalemler:r.ham.filter(k=>k.odev_id===odev.id).map(kalemCevir)});
+  });
+  if($('trayGrup'))$('trayGrup').checked=false;
   secili.clear();odevCiz();navCiz();
 }
 async function odevSil(id){

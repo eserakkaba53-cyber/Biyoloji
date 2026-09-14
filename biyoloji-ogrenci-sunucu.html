@@ -145,7 +145,12 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
     </div>
 
     <div id="frmKod" style="display:none">
-      <label>Davet kodu</label><input type="text" id="kKod" placeholder="BIYO-XXXX-XXXX">
+      <label>Davet kodu</label><input type="text" id="kKod" placeholder="BIYO-… veya SINIF-…" oninput="kodTuru()">
+      <!-- Sınıf kodunda öğretmen adı önceden girmiş olmuyor, öğrenci
+           kendisi yazıyor. Öğrenci başına kodda bu alan kapalı kalır. -->
+      <div id="frmKodAd" style="display:none">
+        <label>Ad soyad</label><input type="text" id="kAd" placeholder="Sınıf listesinde görüneceğin ad">
+      </div>
       <button class="btn" onclick="davetGir()">Sisteme bağlan</button>
       <p class="kucuk"><a onclick="cikisYap()">Farklı hesapla gir</a></p>
     </div>
@@ -472,12 +477,24 @@ async function sifreKaydet(){
     setTimeout(()=>{history.replaceState(null,'',location.pathname);baslat();},1200);
   }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
 }
+/* SINIF- ile başlayan kod paylaşılan sınıf kodudur: öğretmen öğrenciyi
+   önceden kaydetmemiştir, adı öğrenci yazar. BIYO- kodu eskisi gibi
+   tek kişiye ait ve ad zaten kayıtlıdır. */
+function sinifKoduMu(kod){ return /^SINIF-/i.test(String(kod||'').trim()); }
+function kodTuru(){
+  const sar=$('frmKodAd'); if(!sar)return;
+  sar.style.display=sinifKoduMu($('kKod').value)?'':'none';
+}
 async function davetGir(){
   const kod=$('kKod').value.trim().toUpperCase();
   if(!kod){kapiMesaj('Davet kodunu yaz.');return;}
+  const sinif=sinifKoduMu(kod);
+  const ad=(($('kAd')||{}).value||'').trim();
+  if(sinif&&ad.length<2){kapiMesaj('Adını ve soyadını yaz.');return;}
   mesgul(1);
   try{
-    const r=await API.rpc('oz_davet_kullan',{kod});
+    const r = sinif ? await API.rpc('oz_grup_katil',{kod,ad})
+                    : await API.rpc('oz_davet_kullan',{kod});
     if(r&&r.ok){BEKLEYEN_KOD=null;kapiMesaj('');await baslat();}
     else kapiMesaj((r&&r.hata)||'Kod kabul edilmedi.');
   }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
@@ -901,14 +918,17 @@ function logoCiz(){
 async function baslat(){
   mesgul(1);
   try{
-    if(BEKLEYEN_KOD){
+    /* Bağlantıdaki kod kendiliğinden kullanılır. Sınıf kodunda ad
+       gerektiği için kendiliğinden kullanılamaz; kod ekranına düşüp
+       öğrenciden adını istiyoruz. */
+    if(BEKLEYEN_KOD && !sinifKoduMu(BEKLEYEN_KOD)){
       try{const r=await API.rpc('oz_davet_kullan',{kod:BEKLEYEN_KOD});
         if(r&&r.ok)BEKLEYEN_KOD=null;}catch(e){}
     }
     const bagli=await veriYukle();
     if(!bagli){
       ekran('kod');
-      if(BEKLEYEN_KOD)$('kKod').value=BEKLEYEN_KOD;
+      if(BEKLEYEN_KOD){$('kKod').value=BEKLEYEN_KOD;kodTuru();}
       /* KIMLIK_UYARI: sunucu satır döndürdü ama hiçbiri bu hesaba ait
          değildi. En olası sebep öğretmen hesabıyla öğrenci paneline
          girilmesi; diğer ihtimal sunucu tarafında bir yetki hatası.
