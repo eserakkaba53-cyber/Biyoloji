@@ -397,7 +397,13 @@ const API={
     return j;
   },
   async req(yol,opt){
-    if(TOKEN&&BITIS&&Date.now()>BITIS&&YENILE)await tokenYenile();
+    if(TOKEN&&BITIS&&Date.now()>BITIS&&YENILE){
+      await tokenYenile();
+      /* ★ 16 Eyl 2026 — tazeleme düşünce oturumSil() TOKEN'ı siliyor ve istek
+         ANONİM sürüyordu: RLS boş döndürüyor, panel boş açılıyordu. 401 fırlat;
+         açılış zaten 401'de giriş ekranına götürüyor. */
+      if(!TOKEN){ const e=new Error('Oturumun süresi doldu; tekrar giriş yap.'); e.kod=401; throw e; }
+    }
     return API.ham(yol,opt);
   },
   sec:(t,q)=>API.req('/rest/v1/'+t+(q?'?'+q:'')),
@@ -699,7 +705,10 @@ async function kaydetKalem(key){
   const v={durum:'ok',dogru:D,yanlis:Y,bos:B,sebep:$('S_'+key).value,tarih:bugun()};
   mesgul(1);
   try{
-    await API.yama('oz_kalemler','id=eq.'+key,v);
+    const r=await API.yama('oz_kalemler','id=eq.'+key,v);
+    /* PATCH 0 satır döndürürse (satır silinmiş ya da yetki yok) sunucuda hiçbir
+       şey değişmemiştir; "Kaydedildi" demek veri kaybını gizlerdi. */
+    if(!r||!r.length) throw new Error('sunucu bu kaydı kabul etmedi. Sayfayı yenileyip tekrar dene.');
     Object.assign(k,{durum:'ok',D,Y,B,sebep:v.sebep,tarih:v.tarih});
     odevCiz();tabCiz();if($('pg-kutup').classList.contains('on'))kutupCiz();toast('Kaydedildi · net '+net(D,Y));
   }catch(e){err.textContent='Kaydedilemedi: '+e.message;err.classList.add('on');}

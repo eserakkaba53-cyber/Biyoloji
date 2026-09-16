@@ -568,7 +568,13 @@ const API={
     return j;
   },
   async req(yol,opt){
-    if(TOKEN&&BITIS&&Date.now()>BITIS&&YENILE)await tokenYenile();
+    if(TOKEN&&BITIS&&Date.now()>BITIS&&YENILE){
+      await tokenYenile();
+      /* ★ 16 Eyl 2026 — tazeleme düşünce oturumSil() TOKEN'ı siliyor ve istek
+         ANONİM sürüyordu: RLS boş döndürüyor, panel boş açılıyordu. 401 fırlat;
+         açılış zaten 401'de giriş ekranına götürüyor. */
+      if(!TOKEN){ const e=new Error('Oturumun süresi doldu; tekrar giriş yap.'); e.kod=401; throw e; }
+    }
     return API.ham(yol,opt);
   },
   sec:(t,q)=>API.req('/rest/v1/'+t+(q?'?'+q:'')),
@@ -1011,9 +1017,20 @@ function wa(id,ekstra){
   if(!n)toast('Bu öğrencinin numarası kayıtlı değil — kişi seçme ekranı açılacak.');
   window.open('https://wa.me/'+n+'?text='+encodeURIComponent(msg),'_blank');
 }
+/* ★ 16 Eyl 2026 — YENİ KOD PANELDE ÜRETİLİR. davet_kodu'nu NULL yazıp
+   sunucunun üretmesini bekliyorduk; oz_kod_tetikleyici yalnız INSERT'te
+   çalışıyor, kod NULL kalıyor ve öğrenci bir daha bağlanamıyordu. Önce
+   sunucudaki oz_kod_uret() istenir; ulaşılamazsa aynı biçimde
+   (BIYO-XXXX-XXXX) burada üretilir. */
+async function yeniDavetKodu(){
+  try{ const k=await API.rpc('oz_kod_uret'); if(typeof k==='string' && /^BIYO-/.test(k)) return k; }catch(e){}
+  const H='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', p=()=>Array.from({length:4},()=>H[Math.floor(Math.random()*H.length)]).join('');
+  return 'BIYO-'+p()+'-'+p();
+}
 async function davetSifirla(id){
   if(!confirm('Öğrencinin hesap bağlantısı koparılacak ve yeni bir davet kodu üretilecek.\n\nÖdev ve sonuç kayıtları silinmez. Devam?'))return;
-  const r=await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+id,{auth_id:null,davet_kodu:null,davet_kullanildi:null}),'Yeni davet kodu üretildi.');
+  const kod=await yeniDavetKodu();
+  const r=await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+id,{auth_id:null,davet_kodu:kod,davet_kullanildi:null}),'Yeni davet kodu üretildi.');
   const o=DB.ogrenciler.find(x=>x.id===id);
   if(r&&r[0])Object.assign(o,{auth_id:null,davet_kodu:r[0].davet_kodu,davet_kullanildi:null});
   gitOgr(id,'davet');
