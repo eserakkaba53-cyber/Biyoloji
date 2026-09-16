@@ -450,7 +450,13 @@ async function kayitOl(){
   if(s1!==s2){kapiMesaj('Şifreler aynı değil.');return;}
   mesgul(1);
   try{
-    const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,body:JSON.stringify({email:mail,password:s1})});
+    /* rol ŞART. Bu Supabase projesi Biyoser koçluk sistemiyle ortak ve
+       oradaki yeni_kullanici() tetikleyicisinde rolün varsayılanı 'koc':
+         if coalesce(new.raw_user_meta_data->>'rol','koc') <> 'koc' then return
+       Burada rol gönderilmediği için özel ders öğrencisi koclar tablosuna
+       7 günlük deneme koçu olarak düşüyor ve koç panelini açabiliyordu. */
+    const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,
+      body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci'}})});
     if(j&&j.access_token){oturumYaz(j);await baslat();}
     else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');}
   }catch(e){kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. "Zaten hesabım var" ile giriş yap.':e.message);}
