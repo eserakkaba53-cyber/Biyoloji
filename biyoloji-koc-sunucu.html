@@ -630,7 +630,9 @@ async function kayitOl(){
   try{
     const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,body:JSON.stringify({email:mail,password:s1})});
     if(j&&j.access_token){oturumYaz(j);await baslat();}
-    else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');}
+    else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');
+      /* Tam ekran onay ekranı; betik yüklenmezse yukarıdaki yazı yedek kalır. */
+      if(window.kayitTamam) kayitTamam({rol:'ozel-ogretmen', eposta:mail});}
   }catch(e){
     kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. Giriş yapmayı dene.':e.message);
   }finally{mesgul(0);}
@@ -1624,3 +1626,6 @@ $('aLogo').onchange=e=>{
 })();
 
 </script>
+
+<!-- kayıt sonrası e-posta onayı ekranı: Biyoser ile ortak, biyoser.com.tr'den yüklenir -->
+<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260925a"></script>

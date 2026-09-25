@@ -464,7 +464,11 @@ async function kayitOl(){
     const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,
       body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci'}})});
     if(j&&j.access_token){oturumYaz(j);await baslat();}
-    else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');}
+    else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');
+      /* Tam ekran onay ekranı panelin ÜSTÜNDE açılır; sayfa değişmediği için
+         BEKLEYEN_KOD (öğretmenin davet kodu) bellekte kalır, öğrenci bu sekmede
+         giriş yapınca baslat() onu kendiliğinden kullanır. */
+      if(window.kayitTamam) kayitTamam({rol:'ozel-ogrenci', eposta:mail});}
   }catch(e){kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. "Zaten hesabım var" ile giriş yap.':e.message);}
   finally{mesgul(0);}
 }
@@ -995,3 +999,6 @@ const _kk=$('kKod');if(_kk)_kk.addEventListener('keydown',e=>{if(e.key==='Enter'
 })();
 
 </script>
+
+<!-- kayıt sonrası e-posta onayı ekranı: Biyoser ile ortak, biyoser.com.tr'den yüklenir -->
+<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260925a"></script>
