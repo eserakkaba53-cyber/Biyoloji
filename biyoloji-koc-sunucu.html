@@ -162,7 +162,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <label>E-posta</label><input type="email" id="gMail" autocomplete="username">
       <label>Şifre</label><input type="password" id="gSifre" autocomplete="current-password">
       <button class="btn" onclick="girisYap()">Giriş yap</button>
-      <p class="kucuk"><a onclick="ekran('sifre')">Şifremi unuttum</a> · <a onclick="ekran('kayit')">Yeni hesap aç</a></p>
+      <p class="kucuk"><a onclick="ekran('sifre')">Şifremi unuttum</a></p>
     </div>
 
     <div id="frmKayit" style="display:none">
@@ -708,7 +708,9 @@ function kalemCevir(k){
 async function veriYukle(){
   const benimId=(KULLANICI&&KULLANICI.id)||null;
   if(!benimId)throw new Error('Oturum bilgisi eksik. Çıkış yapıp tekrar giriş yap.');
-  try{await API.rpc('oz_koc_kur');}
+  /* Sunucu yeni öğretmen açmıyor; kayıtlı öğretmen değilse ok:false döner. */
+  try{const r=await API.rpc('oz_koc_kur');
+    if(r&&r.ok===false)throw new Error(r.hata||'Bu hesap özel ders öğretmeni değil.');}
   catch(e){
     if(e.kod===404||/oz_koc_kur/.test(e.message||''))
       throw new Error('Veritabanı kurulumu eksik. 01-biyoloji-veritabani.sql dosyasını Supabase → SQL Editor\'de çalıştır.');

@@ -133,7 +133,8 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <label>E-posta</label><input type="email" id="gMail" autocomplete="username">
       <label>Şifre</label><input type="password" id="gSifre" autocomplete="current-password">
       <button class="btn" onclick="girisYap()">Giriş yap</button>
-      <p class="kucuk"><a onclick="ekran('sifre')">Şifremi unuttum</a> · <a onclick="ekran('kayit')">Hesap oluştur</a></p>
+      <p class="kucuk"><a onclick="ekran('sifre')">Şifremi unuttum</a><span id="kayitBag" style="display:none"> · <a onclick="ekran('kayit')">Hesap oluştur</a></span></p>
+      <p class="kucuk" id="kayitYok">Hesap yalnız öğretmeninin gönderdiği davet bağlantısıyla açılır.</p>
     </div>
 
     <div id="frmKayit" style="display:none">
@@ -370,6 +371,9 @@ function vurgu(t,q){if(!q)return esc(t);const n=nrm(t),i=n.indexOf(q);if(i<0)ret
 /* ---------- sunucu ---------- */
 const OTURUM_ANAHTAR='BIYO_OZ_OGR_OTURUM';
 let TOKEN=null,YENILE=null,BITIS=0,KULLANICI=null,BEKLEYEN_KOD=null;
+/* Davet kodu tarayıcıda da saklanır: öğrenci e-postayı başka sekmede onaylayıp
+   paneli yeniden açtığında kod kaybolmasın. Kullanılınca silinir. */
+function kodBitti(){BEKLEYEN_KOD=null;try{localStorage.removeItem('BIYO_DAVET');}catch(e){}}
 
 function oturumYaz(j){
   if(!j||!j.access_token)return;
@@ -426,6 +430,10 @@ function kapiMesaj(m,iyi){
   e.textContent=m;e.className='mesaj on '+(iyi?'iyi':'hata');
 }
 function ekran(k){
+  /* Kayıt yalnız davet koduyla: kod yoksa kayıt ekranı hiç açılmaz. */
+  if(k==='kayit'&&!BEKLEYEN_KOD)k='giris';
+  $('kayitBag').style.display=BEKLEYEN_KOD?'':'none';
+  $('kayitYok').style.display=BEKLEYEN_KOD?'none':'';
   ['Giris','Kayit','Kod','Sifre','Yeni','Kurulum'].forEach(x=>$('frm'+x).style.display='none');
   const b={giris:['Giriş','Biyoloji özel ders takip sistemi'],
     kayit:['Hesap oluştur','Bir kez yaparsın, sonra hep aynı hesapla girersin'],
@@ -454,6 +462,7 @@ async function kayitOl(){
   if(!mail){kapiMesaj('E-posta gerekli.');return;}
   if(s1.length<6){kapiMesaj('Şifre en az 6 karakter olmalı.');return;}
   if(s1!==s2){kapiMesaj('Şifreler aynı değil.');return;}
+  if(!BEKLEYEN_KOD){kapiMesaj('Hesap yalnız öğretmeninin gönderdiği davet bağlantısıyla açılır.');return;}
   mesgul(1);
   try{
     /* rol ŞART. Bu Supabase projesi Biyoser koçluk sistemiyle ortak ve
@@ -511,7 +520,7 @@ async function davetGir(){
   try{
     const r = sinif ? await API.rpc('oz_grup_katil',{kod,ad})
                     : await API.rpc('oz_davet_kullan',{kod});
-    if(r&&r.ok){BEKLEYEN_KOD=null;kapiMesaj('');await baslat();}
+    if(r&&r.ok){kodBitti();kapiMesaj('');await baslat();}
     else kapiMesaj((r&&r.hata)||'Kod kabul edilmedi.');
   }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
 }
@@ -942,7 +951,7 @@ async function baslat(){
        öğrenciden adını istiyoruz. */
     if(BEKLEYEN_KOD && !sinifKoduMu(BEKLEYEN_KOD)){
       try{const r=await API.rpc('oz_davet_kullan',{kod:BEKLEYEN_KOD});
-        if(r&&r.ok)BEKLEYEN_KOD=null;}catch(e){}
+        if(r&&r.ok)kodBitti();}catch(e){}
     }
     const bagli=await veriYukle();
     if(!bagli){
@@ -987,13 +996,14 @@ const _kk=$('kKod');if(_kk)_kk.addEventListener('keydown',e=>{if(e.key==='Enter'
   const d=h.match(/#D:([A-Za-z0-9-]+)/);
   if(d){
     BEKLEYEN_KOD=decodeURIComponent(d[1]).toUpperCase();
+    try{localStorage.setItem('BIYO_DAVET',BEKLEYEN_KOD);}catch(e){}
     history.replaceState(null,'',location.pathname+location.search);
-  }
+  }else{try{BEKLEYEN_KOD=localStorage.getItem('BIYO_DAVET')||null;}catch(e){}}
   if(oturumOku()&&TOKEN){
     if(BITIS&&Date.now()>BITIS&&YENILE)tokenYenile().then(()=>TOKEN?baslat():ekran('giris'));
     else baslat();
   }else{
-    if(BEKLEYEN_KOD){ekran('kayit');kapiMesaj('Hoş geldin! Önce kendine bir hesap oluştur, ödevlerin hemen gelecek.',true);}
+    if(BEKLEYEN_KOD&&d){ekran('kayit');kapiMesaj('Hoş geldin! Önce kendine bir hesap oluştur, ödevlerin hemen gelecek.',true);}
     else ekran('giris');
   }
 })();
