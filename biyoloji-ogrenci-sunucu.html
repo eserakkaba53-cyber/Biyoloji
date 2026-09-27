@@ -373,7 +373,13 @@ const OTURUM_ANAHTAR='BIYO_OZ_OGR_OTURUM';
 let TOKEN=null,YENILE=null,BITIS=0,KULLANICI=null,BEKLEYEN_KOD=null;
 /* Davet kodu tarayıcıda da saklanır: öğrenci e-postayı başka sekmede onaylayıp
    paneli yeniden açtığında kod kaybolmasın. Kullanılınca silinir. */
-function kodBitti(){BEKLEYEN_KOD=null;try{localStorage.removeItem('BIYO_DAVET');}catch(e){}}
+function jwtMeta(){try{const g=(TOKEN||'').split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+  return (JSON.parse(decodeURIComponent(escape(atob(g))))||{}).user_metadata||{};}catch(e){return {};}}
+let KOD_DAMGA_SILINDI=false;
+function kodBitti(){BEKLEYEN_KOD=null;try{localStorage.removeItem('BIYO_DAVET');}catch(e){}
+  /* Kayıt damgasındaki kopya da silinir (en iyi çaba). */
+  if(TOKEN&&!KOD_DAMGA_SILINDI&&jwtMeta().bekleyen_kod){KOD_DAMGA_SILINDI=true;
+    API.req('/auth/v1/user',{method:'PUT',body:JSON.stringify({data:{bekleyen_kod:null}})}).catch(()=>{});}}
 
 function oturumYaz(j){
   if(!j||!j.access_token)return;
@@ -478,7 +484,9 @@ async function kayitOl(){
        davet kodu da bu tarayıcıda saklı olduğu için giriş yapınca kullanılır. */
     const donus=location.origin+location.pathname;
     const j=await API.ham('/auth/v1/signup?redirect_to='+encodeURIComponent(donus),{method:'POST',anon:true,
-      body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci'}})});
+      /* Davet kodu hesabın kayıt damgasına da yazılır: onay bağlantısı çoğu zaman
+         posta uygulamasının tarayıcısında açılıyor, orada bu localStorage yok. */
+      body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci', bekleyen_kod:BEKLEYEN_KOD||undefined}})});
     /* Kayıtlı ve onaylı adrese GoTrue 200 + boş identities döner, posta göndermez. */
     if(j&&Array.isArray(j.identities)&&!j.identities.length) throw new Error('User already registered');
     if(j&&j.access_token){oturumYaz(j);await baslat();}
@@ -961,11 +969,14 @@ async function baslat(){
     /* Bağlantıdaki kod kendiliğinden kullanılır. Sınıf kodunda ad
        gerektiği için kendiliğinden kullanılamaz; kod ekranına düşüp
        öğrenciden adını istiyoruz. */
+    /* Bu tarayıcıda kod yoksa hesabın kayıt damgasına bak. */
+    if(!BEKLEYEN_KOD){ const k=jwtMeta().bekleyen_kod; if(k) BEKLEYEN_KOD=String(k).toUpperCase(); }
     if(BEKLEYEN_KOD && !sinifKoduMu(BEKLEYEN_KOD)){
       try{const r=await API.rpc('oz_davet_kullan',{kod:BEKLEYEN_KOD});
         if(r&&r.ok)kodBitti();}catch(e){}
     }
     const bagli=await veriYukle();
+    if(bagli && jwtMeta().bekleyen_kod) kodBitti();   // bağlıysa saklı kod artık gereksiz
     if(!bagli){
       ekran('kod');
       if(BEKLEYEN_KOD){$('kKod').value=BEKLEYEN_KOD;kodTuru();}
@@ -1042,4 +1053,4 @@ const _kk=$('kKod');if(_kk)_kk.addEventListener('keydown',e=>{if(e.key==='Enter'
 </script>
 
 <!-- kayıt sonrası e-posta onayı ekranı: Biyoser ile ortak, biyoser.com.tr'den yüklenir -->
-<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260927a"></script>
+<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260927b"></script>
