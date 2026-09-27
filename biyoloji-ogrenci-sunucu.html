@@ -378,8 +378,8 @@ function jwtMeta(){try{const g=(TOKEN||'').split('.')[1].replace(/-/g,'+').repla
 let KOD_DAMGA_SILINDI=false;
 function kodBitti(){BEKLEYEN_KOD=null;try{localStorage.removeItem('BIYO_DAVET');}catch(e){}
   /* Kayıt damgasındaki kopya da silinir (en iyi çaba). */
-  if(TOKEN&&!KOD_DAMGA_SILINDI&&jwtMeta().bekleyen_kod){KOD_DAMGA_SILINDI=true;
-    API.req('/auth/v1/user',{method:'PUT',body:JSON.stringify({data:{bekleyen_kod:null}})}).catch(()=>{});}}
+  if(TOKEN&&!KOD_DAMGA_SILINDI&&jwtMeta().oz_bekleyen_kod){KOD_DAMGA_SILINDI=true;
+    API.req('/auth/v1/user',{method:'PUT',body:JSON.stringify({data:{oz_bekleyen_kod:null}})}).catch(()=>{});}}
 
 function oturumYaz(j){
   if(!j||!j.access_token)return;
@@ -486,7 +486,7 @@ async function kayitOl(){
     const j=await API.ham('/auth/v1/signup?redirect_to='+encodeURIComponent(donus),{method:'POST',anon:true,
       /* Davet kodu hesabın kayıt damgasına da yazılır: onay bağlantısı çoğu zaman
          posta uygulamasının tarayıcısında açılıyor, orada bu localStorage yok. */
-      body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci', bekleyen_kod:BEKLEYEN_KOD||undefined}})});
+      body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci', oz_bekleyen_kod:BEKLEYEN_KOD||undefined}})});
     /* Kayıtlı ve onaylı adrese GoTrue 200 + boş identities döner, posta göndermez. */
     if(j&&Array.isArray(j.identities)&&!j.identities.length) throw new Error('User already registered');
     if(j&&j.access_token){oturumYaz(j);await baslat();}
@@ -970,13 +970,14 @@ async function baslat(){
        gerektiği için kendiliğinden kullanılamaz; kod ekranına düşüp
        öğrenciden adını istiyoruz. */
     /* Bu tarayıcıda kod yoksa hesabın kayıt damgasına bak. */
-    if(!BEKLEYEN_KOD){ const k=jwtMeta().bekleyen_kod; if(k) BEKLEYEN_KOD=String(k).toUpperCase(); }
+    /* Koçluk öğrenci panelinden ayrı anahtar: orada 'bekleyen_kod' okunup reddedilince siliniyor. */
+    if(!BEKLEYEN_KOD){ const k=jwtMeta().oz_bekleyen_kod; if(k) BEKLEYEN_KOD=String(k).toUpperCase(); }
     if(BEKLEYEN_KOD && !sinifKoduMu(BEKLEYEN_KOD)){
       try{const r=await API.rpc('oz_davet_kullan',{kod:BEKLEYEN_KOD});
         if(r&&r.ok)kodBitti();}catch(e){}
     }
     const bagli=await veriYukle();
-    if(bagli && jwtMeta().bekleyen_kod) kodBitti();   // bağlıysa saklı kod artık gereksiz
+    if(bagli && jwtMeta().oz_bekleyen_kod) kodBitti();   // bağlıysa saklı kod artık gereksiz
     if(!bagli){
       ekran('kod');
       if(BEKLEYEN_KOD){$('kKod').value=BEKLEYEN_KOD;kodTuru();}
