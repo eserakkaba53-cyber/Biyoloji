@@ -618,7 +618,7 @@ async function girisYap(){
       {method:'POST',anon:true,body:JSON.stringify({email:mail,password:sifre})});
     oturumYaz(j); await baslat();
   }catch(e){
-    kapiMesaj(/Invalid login/i.test(e.message)?'E-posta ya da şifre yanlış.':e.message);
+    kapiMesaj((window.kayitTamam&&kayitTamam.hata&&kayitTamam.hata(e.message))||e.message);
   }finally{mesgul(0);}
 }
 async function kayitOl(){
@@ -642,8 +642,10 @@ async function sifreUnuttum(){
   if(!mail){kapiMesaj('E-posta gerekli.');return;}
   mesgul(1);
   try{
-    await API.ham('/auth/v1/recover',{method:'POST',anon:true,
-      body:JSON.stringify({email:mail,redirect_to:location.origin+location.pathname})});
+    /* redirect_to SORGUDA olmalı: GoTrue gövdedekini okumuyor, bağlantı
+       biyoser.com.tr ana sayfasına düşüyordu. */
+    await API.ham('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',anon:true,
+      body:JSON.stringify({email:mail})});
     kapiMesaj('Sıfırlama bağlantısı gönderildi. E-postanı kontrol et.',true);
   }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
 }
@@ -1630,4 +1632,4 @@ $('aLogo').onchange=e=>{
 </script>
 
 <!-- kayıt sonrası e-posta onayı ekranı: Biyoser ile ortak, biyoser.com.tr'den yüklenir -->
-<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260925a"></script>
+<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260927a"></script>

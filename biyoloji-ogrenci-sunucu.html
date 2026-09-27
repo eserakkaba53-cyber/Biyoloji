@@ -454,7 +454,11 @@ async function girisYap(){
     oturumYaz(await API.ham('/auth/v1/token?grant_type=password',
       {method:'POST',anon:true,body:JSON.stringify({email:mail,password:sifre})}));
     await baslat();
-  }catch(e){kapiMesaj(/Invalid login/i.test(e.message)?'E-posta ya da şifre yanlış.':e.message);}
+  }catch(e){
+    kapiMesaj((window.kayitTamam&&kayitTamam.hata&&kayitTamam.hata(e.message))||e.message);
+    if(/email not confirmed/i.test(e.message)&&window.kayitTamam)
+      kayitTamam({durum:'onaysiz', rol:'ozel-ogrenci', eposta:mail, donus:location.origin+location.pathname});
+  }
   finally{mesgul(0);}
 }
 async function kayitOl(){
@@ -470,15 +474,21 @@ async function kayitOl(){
          if coalesce(new.raw_user_meta_data->>'rol','koc') <> 'koc' then return
        Burada rol gönderilmediği için özel ders öğrencisi koclar tablosuna
        7 günlük deneme koçu olarak düşüyor ve koç panelini açabiliyordu. */
-    const j=await API.ham('/auth/v1/signup',{method:'POST',anon:true,
+    /* redirect_to SORGUDA: onay bağlantısı biyoser.com.tr yerine bu panele döner,
+       davet kodu da bu tarayıcıda saklı olduğu için giriş yapınca kullanılır. */
+    const donus=location.origin+location.pathname;
+    const j=await API.ham('/auth/v1/signup?redirect_to='+encodeURIComponent(donus),{method:'POST',anon:true,
       body:JSON.stringify({email:mail,password:s1,data:{rol:'ogrenci'}})});
+    /* Kayıtlı ve onaylı adrese GoTrue 200 + boş identities döner, posta göndermez. */
+    if(j&&Array.isArray(j.identities)&&!j.identities.length) throw new Error('User already registered');
     if(j&&j.access_token){oturumYaz(j);await baslat();}
     else{kapiMesaj('Hesap açıldı. E-postana gelen onay bağlantısına tıkla, sonra giriş yap.',true);ekran('giris');
       /* Tam ekran onay ekranı panelin ÜSTÜNDE açılır; sayfa değişmediği için
          BEKLEYEN_KOD (öğretmenin davet kodu) bellekte kalır, öğrenci bu sekmede
          giriş yapınca baslat() onu kendiliğinden kullanır. */
-      if(window.kayitTamam) kayitTamam({rol:'ozel-ogrenci', eposta:mail});}
-  }catch(e){kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. "Zaten hesabım var" ile giriş yap.':e.message);}
+      if(window.kayitTamam) kayitTamam({rol:'ozel-ogrenci', eposta:mail, donus:donus});}
+  }catch(e){kapiMesaj(/already registered/i.test(e.message)?'Bu e-posta zaten kayıtlı. "Zaten hesabım var" ile giriş yap.'
+    :((window.kayitTamam&&kayitTamam.hata&&kayitTamam.hata(e.message))||e.message));}
   finally{mesgul(0);}
 }
 async function sifreUnuttum(){
@@ -486,8 +496,10 @@ async function sifreUnuttum(){
   if(!mail){kapiMesaj('E-posta gerekli.');return;}
   mesgul(1);
   try{
-    await API.ham('/auth/v1/recover',{method:'POST',anon:true,
-      body:JSON.stringify({email:mail,redirect_to:location.origin+location.pathname})});
+    /* redirect_to SORGUDA olmalı: GoTrue gövdedekini okumuyor, bağlantı
+       biyoser.com.tr ana sayfasına düşüyordu. */
+    await API.ham('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{method:'POST',anon:true,
+      body:JSON.stringify({email:mail})});
     kapiMesaj('Sıfırlama bağlantısı gönderildi. E-postanı kontrol et.',true);
   }catch(e){kapiMesaj(e.message);}finally{mesgul(0);}
 }
@@ -988,6 +1000,16 @@ const _kk=$('kKod');if(_kk)_kk.addEventListener('keydown',e=>{if(e.key==='Enter'
     return;
   }
   const h=location.hash||'';
+  /* Onay dönüşü (#access_token=…&type=signup) ya da kullanılmış / süresi dolmuş
+     bağlantı (#error_code=…). Adres çubuğu temizlenir; açılışın geri kalanı
+     (saklı davet kodu) aynen sürer, mesaj en sonda giriş ekranına yazılır. */
+  const hp0=new URLSearchParams(h.slice(1));
+  const DONUS=(hp0.get('type')==='signup'&&hp0.get('access_token'))?'onay':(hp0.get('error_code')||hp0.get('error'))?'hata':'';
+  let DONUS_EPOSTA='';
+  if(DONUS){
+    if(DONUS==='onay'){ try{ DONUS_EPOSTA=JSON.parse(atob(hp0.get('access_token').split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).email||''; }catch(e){} }
+    history.replaceState(null,'',location.pathname+location.search);
+  }
   if(h.includes('access_token=')&&h.includes('type=recovery')){
     const p=new URLSearchParams(h.slice(1));
     TOKEN=p.get('access_token');YENILE=p.get('refresh_token');BITIS=Date.now()+3000000;
@@ -1005,10 +1027,19 @@ const _kk=$('kKod');if(_kk)_kk.addEventListener('keydown',e=>{if(e.key==='Enter'
   }else{
     if(BEKLEYEN_KOD&&d){ekran('kayit');kapiMesaj('Hoş geldin! Önce kendine bir hesap oluştur, ödevlerin hemen gelecek.',true);}
     else ekran('giris');
+    if(DONUS){
+      if(DONUS_EPOSTA) $('gMail').value=DONUS_EPOSTA;
+      kapiMesaj(DONUS==='onay'?'E-postan onaylandı. Şimdi giriş yap.'
+        :'Bu bağlantı artık geçerli değil. Kayıt onayıysa hesabın büyük ihtimalle onaylandı, giriş yapmayı dene.',DONUS==='onay');
+      /* kayit-tamam.js bu betikten SONRA yükleniyor: ekranı sayfa hazır olunca aç. */
+      document.addEventListener('DOMContentLoaded',()=>{ if(!window.kayitTamam) return;
+        kayitTamam(DONUS==='onay'?{durum:'onaylandi', rol:'ozel-ogrenci', eposta:DONUS_EPOSTA}
+          :{durum:'gecersiz', donus:location.origin+location.pathname}); });
+    }
   }
 })();
 
 </script>
 
 <!-- kayıt sonrası e-posta onayı ekranı: Biyoser ile ortak, biyoser.com.tr'den yüklenir -->
-<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260925a"></script>
+<script src="https://biyoser.com.tr/kayit-tamam.js?v=20260927a"></script>
