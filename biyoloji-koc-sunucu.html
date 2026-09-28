@@ -112,12 +112,18 @@ tr:hover td{background:#F7FAFA}
 .unite-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
 .konu{padding:7px 12px;border-bottom:1px solid var(--line-soft)}
 .konu:last-child{border-bottom:0}
-.konu-h{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:4px}
+.konu-h{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:4px}
+.konu-h .ad{min-width:0}
+.konu-h .dk{margin-left:auto;display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:65%;text-transform:none;letter-spacing:0;font-weight:600;font-size:11.5px;color:var(--ink-3)}
+.konu-h .dk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.konu-h .dk svg{flex:none}
 .tst{display:flex;gap:9px;align-items:center;padding:4px 2px;border-radius:6px}
 .tst:hover{background:#F4F8F8}
 .tst input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
 .tst .ad{flex:1;min-width:0}
 .tst .sq{font-size:11.5px;color:var(--ink-3);font-family:var(--mono);flex:none}
+.tst .kl{font-size:11.5px;color:var(--ink-3);flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:700px){.tst{flex-wrap:wrap}.tst .kl{order:9;flex-basis:100%;max-width:none;padding-left:25px}}
 .tst a{color:var(--accent);text-decoration:none;font-size:12px;flex:none}
 mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 .tray{position:sticky;bottom:0;background:var(--ink);color:#fff;border-radius:10px;padding:12px 14px;margin-top:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:0 -3px 16px rgba(0,0,0,.14)}
@@ -1357,15 +1363,21 @@ function odevCiz(){
   list.forEach(t=>{const u=t.sinif+' › '+t.unite;(grup[u]=grup[u]||{})[t.konu]=(grup[u][t.konu]||[]).concat(t);});
   $('odevList').innerHTML=Object.entries(grup).map(([u,konular])=>{
     const say=Object.values(konular).flat().length;
-    return `<div class="unite"><div class="unite-h">${vurgula(u,q)}<span class="n">${say} test</span></div>`+
-      Object.entries(konular).map(([k,tt])=>`<div class="konu"><div class="konu-h">${vurgula(k,q)}</div>`+
+    return `<div class="unite"><div class="unite-h"><span>${vurgula(u,q)}</span><span class="n">${say} test</span></div>`+
+      Object.entries(konular).map(([k,tt])=>{
+        const dk=[...new Set(tt.map(t=>t.kaynak).filter(Boolean))];
+        return `<div class="konu"><div class="konu-h"><span class="ad">${vurgula(k,q)}</span>${dk.length?`<span class="dk" title="${esc(dk.join(' · '))}">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h3.6L7 5h7v7.5H2z"/></svg>
+          <span>${dk.map(d=>vurgula(d,q)).join(' · ')}</span></span>`:''}</div>`+
         tt.map(t=>`<label class="tst">
           <input type="checkbox" ${secili.has(t.id)?'checked':''} onchange="sec('${t.id}',this.checked)">
           <span class="ad">${vurgula(t.ad,q)}</span>
           <span class="sq">${t.soru?t.soru+' soru':''}</span>
+          ${dk.length>1&&t.kaynak?`<span class="kl" title="${esc(t.kaynak)}">${vurgula(t.kaynak,q)}</span>`:''}
           ${rozet(G[t.id])}
           ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
-        </label>`).join('')+`</div>`).join('')+`</div>`;
+        </label>`).join('')+`</div>`;
+      }).join('')+`</div>`;
   }).join('');
   trayCiz();bekleyenCiz();
 }
