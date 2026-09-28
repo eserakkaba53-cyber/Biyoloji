@@ -774,13 +774,23 @@ let GRUP_VAR=false;
 const SUBE_HARF='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 function grupOf(id){ return DB.gruplar.find(g=>g.id===id)||null; }
 function grupUyeleri(gid){ return DB.ogrenciler.filter(o=>o.grup_id===gid); }
-/* Varsayılan ad: boştaki ilk şube harfi. Koç istediği gibi değiştirir. */
-function yeniSubeAdi(){
+/* Sınıf adındaki kademe: ilk tek başına duran 9-12, yoksa "mezun", yoksa null.
+   Veritabanı tetikleyicisiyle aynı kural; sınıfa katılan öğrencinin kademesi buradan gelir. */
+function kademeOf(ad){
+  const m=/(?:^|\D)(9|10|11|12)(?:\D|$)/.exec(ad||'');
+  return m?m[1]+'. Sınıf':(/mezun/i.test(ad||'')?'Mezun':null);
+}
+/* "9. Sınıf"+"A" → "9 A". Şube kademeyi zaten taşıyorsa ("12 Sayısal") olduğu gibi kalır. */
+function sinifAdi(kademe,sube){ return kademeOf(sube)?sube:kademe.replace('. Sınıf','')+' '+sube; }
+/* "12A" ile "12 a" aynı sınıf sayılır. */
+function adAnahtar(ad){ return String(ad||'').replace(/\s+/g,'').toLocaleLowerCase('tr'); }
+/* Varsayılan şube: o kademede boştaki ilk harf. Koç istediği gibi değiştirir. */
+function yeniSubeAdi(kademe){
   for(const h of SUBE_HARF){
-    const ad=h+' Şubesi';
-    if(!DB.gruplar.some(g=>g.ad===ad)) return ad;
+    const ad=adAnahtar(sinifAdi(kademe,h));
+    if(!DB.gruplar.some(g=>adAnahtar(g.ad)===ad)) return h;
   }
-  return 'Yeni sınıf';
+  return '';
 }
 
 function navCiz(){
@@ -932,6 +942,7 @@ function grupCiz(){
     const uye=grupUyeleri(g.id), link=kodLinki(g.davet_kodu);
     return `<div class="card"><h3>${esc(g.ad)}
         <span class="hint" style="font-weight:400"> · ${uye.length} öğrenci</span></h3>
+      ${kademeOf(g.ad)?'':`<p class="hint" style="color:var(--warn)">Adında kademe yok; katılan öğrenciler 11. Sınıf görünür. Adını '9 A' gibi değiştir.</p>`}
       <div class="kod">${esc(g.davet_kodu||'—')}</div>
       <p class="hint">Bu kodu sınıfın tamamına ver. Giren her öğrenci kendi hesabını açıp adını yazar, bu sınıfa düşer. Kod tükenmez.</p>
       ${link?`<label style="margin-top:12px">Sınıf bağlantısı</label>
@@ -962,11 +973,35 @@ function grupCiz(){
   }
   $('grupOut').innerHTML=h;
 }
-async function grupEkle(){
-  const ad=(prompt('Sınıfın adı:', yeniSubeAdi())||'').trim();
-  if(!ad)return;
-  const r=await guvenli(()=>API.ekle('oz_gruplar',{koc_id:DB.koc.id,ad}),'Sınıf açıldı.');
-  if(r&&r[0]){DB.gruplar.push(r[0]);grupCiz();navCiz();}
+function grupEkle(){
+  const ov=document.createElement('div');ov.className='ovl';
+  ov.innerHTML=`<div class="card" style="max-width:440px;width:100%;margin:0">
+    <h3>Yeni sınıf</h3>
+    <label for="mKademe">Kademe</label>
+    <select id="mKademe"><option>9. Sınıf</option><option>10. Sınıf</option><option>11. Sınıf</option><option>12. Sınıf</option><option>Mezun</option></select>
+    <label for="mSube" style="margin-top:9px">Şube / ad</label><input type="text" id="mSube" placeholder="Örn. A ya da Sayısal">
+    <p class="hint">Sınıfa katılan öğrencilerin kademesi buradan gelir.</p>
+    <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" id="mOk">Sınıfı aç</button><button class="btn ghost" id="mNo">Vazgeç</button></div></div>`;
+  document.body.appendChild(ov);
+  const kapat=()=>ov.remove(), kd=ov.querySelector('#mKademe'), sb=ov.querySelector('#mSube');
+  /* Koç şubeye dokunmadıysa kademe değişince öneri de o kademenin boştaki harfine geçer. */
+  let oneri=sb.value=yeniSubeAdi(kd.value);
+  kd.onchange=()=>{if(sb.value===oneri)sb.value=oneri=yeniSubeAdi(kd.value);};
+  ov.querySelector('#mNo').onclick=kapat;
+  ov.onclick=e=>{if(e.target===ov)kapat();};
+  setTimeout(()=>{if(kd.focus)kd.focus();},50);
+  ov.querySelector('#mOk').onclick=async()=>{
+    const sube=sb.value.trim();
+    if(!sube){toast('Şubeyi ya da sınıfın adını yaz.');return;}
+    const ad=sinifAdi(kd.value,sube);
+    if(DB.gruplar.some(g=>!g.arsiv&&adAnahtar(g.ad)===adAnahtar(ad))){toast('"'+ad+'" adında açık bir sınıf zaten var.');return;}
+    ov.querySelector('#mOk').disabled=true;
+    try{
+      const r=await guvenli(()=>API.ekle('oz_gruplar',{koc_id:DB.koc.id,ad}),'Sınıf açıldı.');
+      if(r&&r[0])DB.gruplar.push(r[0]);
+      kapat();grupCiz();navCiz();
+    }catch(e){ov.querySelector('#mOk').disabled=false;}
+  };
 }
 async function grupAdDegis(id){
   const g=grupOf(id);if(!g)return;
@@ -984,11 +1019,13 @@ async function grupArsivle(id){
 }
 async function grupAta(ogrId,grupId){
   const o=DB.ogrenciler.find(x=>x.id===ogrId);if(!o)return;
-  await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+ogrId,{grup_id:grupId||null}),
+  const r=await guvenli(()=>API.yama('oz_ogrenciler','id=eq.'+ogrId,{grup_id:grupId||null}),
     grupId?('Sınıfa taşındı: '+(grupOf(grupId)||{}).ad):'Sınıftan çıkarıldı.');
   o.grup_id=grupId||null;
+  /* Tetikleyici kademeyi sınıfın adından yazdı; sunucunun döndürdüğü satırdan al. */
+  if(r&&r[0]&&r[0].sinif)o.sinif=r[0].sinif;
   grupCiz();navCiz();
-  if(AKTIF===ogrId)bilgiCiz();
+  if(AKTIF===ogrId)gitOgr(ogrId,'bilgi');   /* başlıktaki kademe de yenilensin */
 }
 
 /* ---------- davet ---------- */
