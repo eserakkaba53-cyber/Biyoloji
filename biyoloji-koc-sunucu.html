@@ -54,9 +54,9 @@ input,select,textarea{font-family:inherit;font-size:inherit}
 .nav .sn{font-size:11px;color:#7E9AA3;display:block;font-weight:400;margin-top:1px}
 .nav button.on .sn{color:#A9CBD1}
 .nav button.snf{font-weight:600;color:#E3EDF0}
-.nav button.ic{padding-left:34px;font-size:13px}
+.nav button.ic{padding-left:50px;font-size:13px}
 .nav .ok{width:12px;flex:none;color:#7E9AA3;font-size:11px}
-.nav-bos{padding:6px 16px 8px 34px;font-size:12px;color:#6E8A93}
+.nav-bos{padding:6px 16px 8px 50px;font-size:12px;color:#6E8A93}
 .sd-ozet{display:flex;gap:22px;flex-wrap:wrap;font-size:13px}
 tr.tik{cursor:pointer}
 tr.tik:hover td{background:var(--accent-soft)}
@@ -832,7 +832,7 @@ function ogrDugme(o,ic){
   const bek=bekleyenSay(o.id), bagli=!!o.auth_id, g=grupOf(o.grup_id);
   return `<button data-o="${o.id}" class="${ic?'ic ':''}${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
       <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.ad)}</span>
-      <span class="sn">${esc(o.sinif)}${(!ic&&g)?' · '+esc(g.ad):''}${bagli?'':' · davet bekliyor'}</span></span>
+      ${ic?(bagli?'':'<span class="sn">davet bekliyor</span>'):`<span class="sn">${esc(o.sinif)}${g?' · '+esc(g.ad):''}${bagli?'':' · davet bekliyor'}</span>`}</span>
       ${bek?`<span class="badge">${bek}</span>`:''}</button>`;
 }
 function navSiniflar(){
