@@ -1,3 +1,4 @@
+<html lang="tr">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Biyoser · Öğrenci Paneli</title>
@@ -93,6 +94,8 @@ input[type=text],input[type=email],input[type=password],input[type=number],input
 mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
 .grp{border:1px solid var(--line-soft);border-radius:9px;margin-bottom:9px;overflow:hidden;background:#fff}
 .grp-h{background:#F2F6F7;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.grp-ac{width:100%;border:0;cursor:pointer;text-align:left;font-family:inherit}
+.grp-ac .ok{width:12px;flex:none;color:var(--ink-3);font-size:11px}
 .grp-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
 .itm{display:flex;gap:9px;align-items:center;padding:9px 12px;border-top:1px solid var(--line-soft)}
 .itm .ad{flex:1;min-width:0}
@@ -197,7 +200,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
     <section class="page" id="pg-kutup">
       <h1>Test kütüphanesi</h1><p class="sub">Öğretmeninin bütün testleri burada. Ara, dokun, açılsın.</p>
       <div class="card">
-        <input type="text" id="kq" placeholder="Konu ya da test adı yaz…" oninput="kutupCiz()">
+        <input type="text" id="kq" placeholder="Klasör, konu ya da test adı yaz…" oninput="kutupCiz()">
         <div class="hint" id="kInfo" style="margin-top:8px"></div>
       </div>
       <div id="kList"></div>
@@ -756,21 +759,32 @@ function kendiOdev(){return S.odevler.find(o=>o.kendi);}
 function cozulmusHarita(){
   const m={};
   S.odevler.forEach(o=>o.kalemler.forEach(k=>{
-    if(!k.testId||k.durum!=='ok')return;
+    const key=k.link||k.testId;
+    if(!key||k.durum!=='ok')return;
     const v=Object.assign({},k,{odevden:!o.kendi});
-    if(!m[k.testId]||m[k.testId].odevden)m[k.testId]=v;
+    if(!m[key]||m[key].odevden)m[key]=v;
   }));
   return m;
 }
+/* Testler öğretmenin Drive klasörlerine göre durur (öğretmenin Ödev ver ekranıyla aynı düzen).
+   Klasörler ve testler doğal isim sırasında; aynı Drive bağlantısı tek satır. */
+const KUTUP_ACIK=new Set(); let KUTUP_LISTE=[];
+const dogal=(a,b)=>String(a||'').localeCompare(String(b||''),'tr',{numeric:true,sensitivity:'base'});
+function tekKatalog(){
+  const m=new Map();
+  S.katalog.forEach(t=>{ const k=t.link||t.id; if(!m.has(k)) m.set(k,t); });
+  return [...m.values()];
+}
+function kutupAc(i){ const k=KUTUP_LISTE[i]; KUTUP_ACIK.has(k)?KUTUP_ACIK.delete(k):KUTUP_ACIK.add(k); kutupCiz(); }
 function kutupCiz(){
-  const L=S.katalog;
+  const L=tekKatalog();
   const C=cozulmusHarita();
   if(!L.length){
     $('kList').innerHTML='<div class="empty"><b>Kütüphane boş</b>Öğretmenin testleri sisteme eklediğinde burada görünecek.</div>';
     $('kInfo').textContent='';$('cozulenler').innerHTML='';return;
   }
   const q=nrm(($('kq')||{}).value||'');
-  const acik=L.filter(x=>!C[x.id]);
+  const acik=L.filter(x=>!C[x.link||x.id]);
   const list=acik.filter(x=>!q||nrm(x.ad+' '+x.konu+' '+x.unite+' '+(x.kaynak||'')).includes(q));
   const cozulen=Object.values(C);
   const odevden=cozulen.filter(k=>k.odevden).length;
@@ -783,10 +797,14 @@ function kutupCiz(){
       : '<div class="empty"><b>Bütün testleri çözdün</b>Aşağıdaki listede hepsi duruyor. Öğretmenin yeni test eklediğinde burada görünür.</div>';
   }else{
     const grup={};
-    list.forEach(x=>{(grup[x.konu||'Diğer']=grup[x.konu||'Diğer']||[]).push(x);});
-    $('kList').innerHTML=Object.entries(grup).map(([k,tt])=>`<div class="grp">
-      <div class="grp-h">${vurgu(k,q)}<span class="n">${tt.length} test</span></div>`+
-      tt.map(x=>cozSatir(x,q)).join('')+`</div>`).join('');
+    list.forEach(x=>{ const k=x.kaynak||'Diğer'; (grup[k]=grup[k]||[]).push(x); });
+    KUTUP_LISTE=Object.keys(grup).sort(dogal);
+    $('kList').innerHTML=KUTUP_LISTE.map((k,i)=>{
+      const tt=grup[k].sort((a,b)=>dogal(a.ad,b.ad)), ac=!!q||KUTUP_ACIK.has(k);
+      return `<div class="grp"><button type="button" class="grp-h grp-ac" aria-expanded="${ac}" onclick="kutupAc(${i})">
+        <span class="ok" aria-hidden="true">${ac?'▾':'▸'}</span><span>${vurgu(k,q)}</span><span class="n">${tt.length} test</span></button>`+
+        (ac?tt.map(x=>cozSatir(x,q)).join(''):'')+`</div>`;
+    }).join('');
   }
   cozulenCiz(cozulen);
 }
