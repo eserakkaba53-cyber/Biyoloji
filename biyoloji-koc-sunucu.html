@@ -932,9 +932,15 @@ function sinifDurumCiz(){
         <td>${r.oran===null?'<span class="hint">—</span>':`<span class="pill ${r.oran>=70?'p-ok':r.oran>=50?'p-warn':'p-bad'}">%${r.oran}</span>`}</td>
         <td class="mono">${r.ortNet===null?'—':r.ortNet}</td><td class="hint" style="white-space:nowrap">${r.son?trh(r.son):'—'}</td></tr>`;
     }).join('')+'</tbody></table></div></div>';
-  if(k!==SINIFSIZ){
-    const S=sinifOdevleri(uye);
-    h+=`<div class="card"><h3>Sınıfa verilen ödevler</h3>`+(S.length?S.slice(0,12).map(s=>{
+  if(k!==SINIFSIZ) h+=sinifOdevKart(k,uye);
+  out.innerHTML=h;
+}
+/* Sınıfa verilen ödevler kartı: Durum sekmesinde ve Sınıfa ödev ver sekmesinin üstünde.
+   En yeni 5 ödev açık, daha eskiler katlanmış durur. */
+function sinifOdevKart(k,uye){
+  const S=sinifOdevleri(uye);
+  if(!S.length) return '<div class="card"><h3>Sınıfa verilen ödevler</h3><p class="hint">Bu sınıfa henüz toplu ödev verilmedi.</p></div>';
+  const tek=s=>{
       const biten=s.uye.filter(u=>u.bit===u.top).length, kb=s.uye.reduce((a,u)=>a+u.bit,0), kt=s.uye.reduce((a,u)=>a+u.top,0);
       const kalan=s.uye.filter(u=>u.bit<u.top).sort((a,b)=>b.gec-a.gec);
       const almayan=uye.length-s.uye.length;
@@ -946,9 +952,9 @@ function sinifDurumCiz(){
           kalan.map(u=>`<button class="pill ${u.gec?'p-bad':'p-warn'}" style="cursor:pointer;border:0" onclick="gitOgr('${u.o.id}')">${esc(u.o.ad)} · ${u.bit}/${u.top}</button>`).join('')}</div></details>`:''}
         ${almayan>0?`<div class="hint" style="margin-top:4px">${almayan} öğrenci bu ödevi almamış: sınıfa sonradan katılmış olabilir.</div>`:''}
       </div>`;
-    }).join(''):'<p class="hint">Bu sınıfa henüz toplu ödev verilmedi. "Sınıfa ödev ver" sekmesinden başla.</p>')+'</div>';
-  }
-  out.innerHTML=h;
+  };
+  return `<div class="card"><h3>Sınıfa verilen ödevler<span class="hint" style="font-weight:400"> · ${S.length} ödev</span></h3>${S.slice(0,5).map(tek).join('')}`+
+    (S.length>5?`<details style="margin-top:8px"><summary class="hint" style="cursor:pointer">Daha eski ödevler (${S.length-5})</summary>${S.slice(5).map(tek).join('')}</details>`:'')+'</div>';
 }
 
 function navCiz(){
@@ -1442,7 +1448,7 @@ async function kopruTest(){
 /* ---------- bekleyen ödevler ---------- */
 function bekleyenCiz(){
   const oid=AKTIF, el=$('bekleyenler');
-  if(!oid){el.innerHTML='';return;}
+  if(!oid){el.innerHTML=(SINIF&&SINIF!==SINIFSIZ)?sinifOdevKart(SINIF,sinifUyeleri(SINIF).filter(o=>!o.arsiv)):'';return;}
   const od=DB.odevler.filter(o=>o.ogrenciId===oid&&!o.kendi)
     .map(o=>({o,bek:o.kalemler.filter(k=>k.durum!=='ok')}))
     .filter(x=>x.bek.length)
