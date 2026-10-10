@@ -122,6 +122,13 @@ tr:hover td{background:#F7FAFA}
 .qmeta{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:12px;color:var(--ink-3);gap:10px;flex-wrap:wrap}
 .unite{border:1px solid var(--line);border-radius:9px;margin-bottom:9px;overflow:hidden;background:#fff}
 .unite-h{background:#F2F6F7;padding:8px 12px;font-weight:700;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft)}
+.klasor-h{width:100%;border:0;cursor:pointer;text-align:left;font-family:inherit}
+.klasor-h .ok{width:12px;flex:none;color:var(--ink-3);font-size:11px}
+.odev-arac{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 10px}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg2 button{border:0;background:#fff;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.seg2 button+button{border-left:1px solid var(--line)}
+.seg2 button.on{background:var(--accent);color:#fff}
 .unite-h .n{margin-left:auto;font-weight:600;color:var(--ink-3);font-size:11.5px}
 .konu{padding:7px 12px;border-bottom:1px solid var(--line-soft)}
 .konu:last-child{border-bottom:0}
@@ -243,13 +250,14 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <div id="bekleyenler"></div>
       <p class="sub" style="margin-top:0">Yazmaya başla, testler süzülsün. Kutu boşken tüm katalog listelenir.</p>
       <div class="card">
-        <input type="text" id="q" placeholder="Ünite, konu ya da test adı yaz…" oninput="odevCiz()">
+        <input type="text" id="q" placeholder="Klasör, konu ya da test adı yaz…" oninput="odevCiz()">
         <div class="qmeta"><span id="qInfo"></span>
           <span style="display:flex;gap:12px;align-items:center">
             <label style="margin:0;font-weight:600;color:var(--ink-2);display:flex;gap:5px;align-items:center;cursor:pointer">
               <input type="checkbox" id="qGizle" style="width:auto" onchange="odevCiz()"> Daha önce verdiklerimi gizle</label>
             <button class="btn ghost sm" onclick="secimTemizle()">Seçimi temizle</button></span></div>
       </div>
+      <div id="odevArac" class="odev-arac"></div>
       <div id="odevList"></div>
       <div class="tray" id="tray" style="display:none">
         <b id="traySay">0 test seçildi</b>
@@ -870,7 +878,7 @@ function gitSinif(k,alt){
 function sinifGecmis(k){
   const m={}, uye=new Set(sinifUyeleri(k).filter(o=>!o.arsiv).map(o=>o.id));
   DB.odevler.filter(x=>uye.has(x.ogrenciId)&&!x.kendi).forEach(o=>o.kalemler.forEach(kl=>{
-    const g=m[kl.testId]=m[kl.testId]||{kisi:new Set(),bek:0};
+    const key=kl.link||kl.testId, g=m[key]=m[key]||{kisi:new Set(),bek:0};
     g.kisi.add(o.ogrenciId); if(kl.durum!=='ok') g.bek++;
   }));
   return m;
@@ -1293,7 +1301,8 @@ function katalogDisaAktar(){
 function katalogCiz(){
   $('katSay').textContent=DB.katalog.length;
   const q=nrm($('katQ').value);
-  const list=DB.katalog.filter(t=>!q||nrm(t.ad+' '+t.konu+' '+t.unite+' '+t.sinif+' '+(t.kaynak||'')).includes(q));
+  const list=DB.katalog.filter(t=>!q||nrm(t.ad+' '+t.konu+' '+t.unite+' '+t.sinif+' '+(t.kaynak||'')).includes(q))
+    .sort((a,b)=>dogal(a.kaynak,b.kaynak)||dogal(a.ad,b.ad));
   if(!DB.katalog.length){$('katList').innerHTML='<div class="empty"><b>Katalog boş</b>Drive köprünle testlerini çek ya da tek tek ekle.</div>';return;}
   $('katList').innerHTML='<table><thead><tr><th>Test</th><th>Konu</th><th>Ünite</th><th>Soru</th><th>Bağlantı</th><th></th></tr></thead><tbody>'+
     list.map(t=>`<tr><td><b>${esc(t.ad)}</b>${t.kaynak?`<div class="hint">${esc(t.kaynak)}</div>`:''}</td>
@@ -1533,7 +1542,7 @@ function gecmis(oid){
   const m={};
   if(!oid)return m;
   DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi).forEach(o=>o.kalemler.forEach(k=>{
-    const g=m[k.testId]=m[k.testId]||{kez:0,son:null,net:null,bekleyen:0};
+    const key=k.link||k.testId, g=m[key]=m[key]||{kez:0,son:null,net:null,bekleyen:0};
     g.kez++;
     if(k.durum==='ok'){if(!g.son||(k.tarih||'')>=g.son){g.son=k.tarih||o.verilis;g.net=net(k.D,k.Y);}}
     else g.bekleyen++;
@@ -1545,35 +1554,93 @@ function rozet(g){
   if(g.bekleyen)return '<span class="pill p-warn" title="Verildi ama sonucu gelmedi">verildi · bekliyor</span>';
   return `<span class="pill p-neu" title="${g.kez} kez verildi">${g.kez}. kez · son ${g.net} net</span>`;
 }
+/* ---------- ödev ver: Drive klasörleri (10 Eki 2026) ----------
+   Katalog her testi adından tahmin edilen bir müfredat konusuna koyuyordu; 1.274 testin 1.062'si
+   "Eşleşmeyen"e düşmüş, kalanlar başka konulara dağılmıştı, aynı test 2-3 kez kayıtlıydı. Öğretmen
+   testi Drive'daki klasöründe arıyor: varsayılan görünüm Drive klasörü, içinde testler doğal isim
+   sırasında ("Test 9" "Test 10"dan önce). Aynı Drive bağlantısı tek satır; geçmiş de bağlantıya göre. */
+let GORUNUM=(()=>{ try{ return localStorage.getItem('BIYO_OZ_GORUNUM')||'klasor'; }catch(e){ return 'klasor'; } })();
+const KLASOR_ACIK=new Set(); let KLASOR_LISTE=[];
+const dogal=(a,b)=>String(a||'').localeCompare(String(b||''),'tr',{numeric:true,sensitivity:'base'});
+function tAnahtar(id){ const t=DB.katalog.find(x=>x.id===id); return (t&&t.link)||id; }
+function tekKatalog(){
+  const m=new Map();
+  DB.katalog.forEach(t=>{ const k=t.link||t.id, o=m.get(k);
+    if(!o||(o.unite==='Eşleşmeyen'&&t.unite!=='Eşleşmeyen')) m.set(k,t); });
+  return [...m.values()];
+}
+function gorunumSec(g){ GORUNUM=g; try{ localStorage.setItem('BIYO_OZ_GORUNUM',g); }catch(e){} odevCiz(); }
+function klasorAc(i){ const k=KLASOR_LISTE[i]; KLASOR_ACIK.has(k)?KLASOR_ACIK.delete(k):KLASOR_ACIK.add(k); odevCiz(); }
+/* Drive'a sonradan eklenen testleri kataloğa alır; klasör eşleştirme ekranına gerek kalmadan. */
+async function driveYeniAl(){
+  const url=(DB.koc&&DB.koc.drive_url)||'';
+  if(!url){ toast('Önce Test kataloğu sayfasında Drive köprü adresini kaydet.'); return; }
+  let liste=null;
+  mesgul(1);
+  try{ const r=await fetch(url,{redirect:'follow'}); liste=await r.json(); }
+  catch(e){ toast('Drive köprüsüne ulaşılamadı. Test kataloğu sayfasındaki "Drive\'dan çek" ile dene.'); return; }
+  finally{ mesgul(0); }
+  if(!Array.isArray(liste)){ toast('Drive köprüsü dosya listesi döndürmedi.'); return; }
+  const varLink=new Set(DB.katalog.map(t=>t.link).filter(Boolean)), yeni=new Map();
+  liste.forEach(f=>{
+    if(!f||!f.ad||!f.link||varLink.has(f.link)||yeni.has(f.link)) return;
+    const ad=String(f.ad).replace(/\.(pdf|docx?|jpe?g|png)$/i,''), x=adTahmin(ad,null)||konuTahmin(f.klasor||'');
+    yeni.set(f.link,{koc_id:DB.koc.id,sinif:x?x.sinif:Object.keys(AGAC)[0],unite:x?x.unite:'Eşleşmeyen',
+      konu:x?x.konu:(f.klasor||'—'),kaynak:f.klasor||'',ad,link:f.link,soru:0});
+  });
+  if(!yeni.size){ toast('Drive\'da yeni test yok: '+liste.length+' dosyanın hepsi sistemde.'); return; }
+  const satirlar=[...yeni.values()];
+  await guvenli(async()=>{
+    for(let i=0;i<satirlar.length;i+=200){
+      const r=await API.ekle('oz_katalog',satirlar.slice(i,i+200));
+      (r||[]).forEach(t=>DB.katalog.push({id:t.id,sinif:t.sinif,unite:t.unite,konu:t.konu,ad:t.ad,link:t.link,kaynak:t.kaynak,soru:t.soru}));
+    }
+  }, satirlar.length+' yeni test eklendi.');
+  odevCiz(); navCiz();
+}
 function odevCiz(){
   const q=nrm($('q').value), oid=AKTIF||'', G=SINIF?sinifGecmis(SINIF):gecmis(oid), gizle=($('qGizle')||{}).checked;
-  let list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
-  const gizlenen=gizle?list.filter(t=>G[t.id]).length:0;
-  if(gizle)list=list.filter(t=>!G[t.id]);
-  $('qInfo').innerHTML=(q?`${list.length} test eşleşti`:`Tüm katalog · ${DB.katalog.length} test`)+
+  const gk=t=>G[t.link||t.id], hepsi=tekKatalog();
+  let list=hepsi.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
+  const gizlenen=gizle?list.filter(gk).length:0;
+  if(gizle) list=list.filter(t=>!gk(t));
+  $('qInfo').innerHTML=(q?`${list.length} test eşleşti`:`Tüm katalog · ${hepsi.length} test`)+
     (gizlenen?` <span class="pill p-neu">${gizlenen} tanesi gizlendi</span>`:'');
+  $('odevArac').innerHTML=`<div class="seg2" role="group" aria-label="Görünüm">
+      <button type="button" class="${GORUNUM==='klasor'?'on':''}" onclick="gorunumSec('klasor')">Drive klasörleri</button>
+      <button type="button" class="${GORUNUM==='konu'?'on':''}" onclick="gorunumSec('konu')">Konular</button></div>
+    <button type="button" class="btn ghost sm" onclick="driveYeniAl()"${DB.koc&&DB.koc.drive_url?'':' disabled title="Önce Test kataloğu sayfasında köprü adresini kaydet"'}>Drive'dan yeni testleri al</button>`;
   if(!DB.katalog.length){$('odevList').innerHTML='<div class="empty"><b>Önce test kataloğunu doldur</b>Sol menüden Test kataloğu → Drive\'dan çek.</div>';trayCiz();bekleyenCiz();return;}
   if(!list.length){$('odevList').innerHTML='<div class="empty"><b>Eşleşme yok</b>Farklı bir kelime dene ya da kutuyu boşalt.</div>';trayCiz();bekleyenCiz();return;}
-  const grup={};
-  list.forEach(t=>{const u=t.sinif+' › '+t.unite;(grup[u]=grup[u]||{})[t.konu]=(grup[u][t.konu]||[]).concat(t);});
-  $('odevList').innerHTML=Object.entries(grup).map(([u,konular])=>{
-    const say=Object.values(konular).flat().length;
-    return `<div class="unite"><div class="unite-h"><span>${vurgula(u,q)}</span><span class="n">${say} test</span></div>`+
-      Object.entries(konular).map(([k,tt])=>{
-        const dk=[...new Set(tt.map(t=>t.kaynak).filter(Boolean))];
-        return `<div class="konu"><div class="konu-h"><span class="ad">${vurgula(k,q)}</span>${dk.length?`<span class="dk" title="${esc(dk.join(' · '))}">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2 3.5h3.6L7 5h7v7.5H2z"/></svg>
-          <span>${dk.map(d=>vurgula(d,q)).join(' · ')}</span></span>`:''}</div>`+
-        tt.map(t=>`<label class="tst">
+  const satir=(t,kaynakGoster)=>`<label class="tst">
           <input type="checkbox" ${secili.has(t.id)?'checked':''} onchange="sec('${t.id}',this.checked)">
           <span class="ad">${vurgula(t.ad,q)}</span>
           <span class="sq">${t.soru?t.soru+' soru':''}</span>
-          ${dk.length>1&&t.kaynak?`<span class="kl" title="${esc(t.kaynak)}">${vurgula(t.kaynak,q)}</span>`:''}
-          ${SINIF?sinifRozet(G[t.id]):rozet(G[t.id])}
+          ${kaynakGoster&&t.kaynak?`<span class="kl" title="${esc(t.kaynak)}">${vurgula(t.kaynak,q)}</span>`:''}
+          ${SINIF?sinifRozet(gk(t)):rozet(gk(t))}
           ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
-        </label>`).join('')+`</div>`;
-      }).join('')+`</div>`;
-  }).join('');
+        </label>`;
+  if(GORUNUM==='klasor'){
+    const kl={};
+    list.forEach(t=>{ const k=t.kaynak||'Klasörsüz'; (kl[k]=kl[k]||[]).push(t); });
+    KLASOR_LISTE=Object.keys(kl).sort(dogal);
+    $('odevList').innerHTML=KLASOR_LISTE.map((k,i)=>{
+      const tt=kl[k].sort((a,b)=>dogal(a.ad,b.ad)), acik=!!q||KLASOR_ACIK.has(k), sc=tt.filter(t=>secili.has(t.id)).length;
+      return `<div class="unite"><button type="button" class="unite-h klasor-h" aria-expanded="${acik}" onclick="klasorAc(${i})">
+          <span class="ok" aria-hidden="true">${acik?'▾':'▸'}</span><span>${vurgula(k,q)}</span>
+          ${sc?`<span class="pill p-neu">${sc} seçili</span>`:''}<span class="n">${tt.length} test</span></button>`+
+        (acik?`<div class="konu">${tt.map(t=>satir(t,false)).join('')}</div>`:'')+`</div>`;
+    }).join('');
+  } else {
+    const grup={};
+    list.forEach(t=>{ const u=t.sinif+' › '+t.unite; (grup[u]=grup[u]||{})[t.konu]=(grup[u][t.konu]||[]).concat(t); });
+    $('odevList').innerHTML=Object.keys(grup).sort(dogal).map(u=>{
+      const konular=grup[u], say=Object.values(konular).flat().length;
+      return `<div class="unite"><div class="unite-h"><span>${vurgula(u,q)}</span><span class="n">${say} test</span></div>`+
+        Object.keys(konular).sort(dogal).map(k=>`<div class="konu"><div class="konu-h"><span class="ad">${vurgula(k,q)}</span></div>`+
+          konular[k].sort((a,b)=>dogal(a.ad,b.ad)).map(t=>satir(t,true)).join('')+`</div>`).join('')+`</div>`;
+    }).join('');
+  }
   trayCiz();bekleyenCiz();
 }
 function sec(id,v){v?secili.add(id):secili.delete(id);trayCiz();}
@@ -1611,15 +1678,15 @@ async function odevOlustur(){
   /* Tekrar uyarısı: gruba verirken "kimde tekrar" bilgisi kalabalık
      yapıyor, kaç kişide tekrar olduğunu söylemek yetiyor. */
   if(g){
-    const tekrarli=hedefler.filter(id=>{const G=gecmis(id);return [...secili].some(t=>G[t]);});
+    const tekrarli=hedefler.filter(id=>{const G=gecmis(id);return [...secili].some(t=>G[tAnahtar(t)]);});
     if(tekrarli.length && !confirm(
       `${g.ad}: ${hedefler.length} öğrenciye ${secili.size} test gidecek.\n\n`+
       `${tekrarli.length} öğrencide bu testlerden en az biri daha önce verilmişti.\n\nDevam edilsin mi?`))return;
     if(!tekrarli.length && !confirm(`${g.ad}: ${hedefler.length} öğrenciye ${secili.size} test gidecek. Devam?`))return;
   }else{
-    const G=gecmis(oid), tekrar=[...secili].filter(id=>G[id]);
+    const G=gecmis(oid), tekrar=[...secili].filter(id=>G[tAnahtar(id)]);
     if(tekrar.length){
-      const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id),gg=G[id];
+      const ad=tekrar.slice(0,5).map(id=>{const t=DB.katalog.find(x=>x.id===id),gg=G[tAnahtar(id)];
         return '• '+(t?t.ad:'?')+(gg.bekleyen?' (hâlâ bekliyor)':' (son: '+gg.net+' net)');}).join('\n');
       if(!confirm(tekrar.length+' test bu öğrenciye daha önce verilmişti:\n\n'+ad+
         (tekrar.length>5?'\n…ve '+(tekrar.length-5)+' tane daha':'')+
