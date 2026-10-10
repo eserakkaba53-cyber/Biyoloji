@@ -613,6 +613,11 @@ const API={
     return API.ham(yol,opt);
   },
   sec:(t,q)=>API.req('/rest/v1/'+t+(q?'?'+q:'')),
+  /* Supabase bir sorguda en fazla 1.000 satır döndürür. Katalog 3.000 satırı geçince panel yalnız ilk
+     1.000'ini görüyordu: testlerin bir kısmı hiç görünmüyor, Drive'dan her çekişte 'yok' sanılıp yeniden
+     yazılıyordu (10 Eki 2026). Liste sorguları sayfa sayfa sonuna kadar çekilir; sıralama kimlikle sabitlenir. */
+  hepsi:async(t,q)=>{ const out=[]; for(let o=0;;o+=1000){ const p=await API.sec(t,(q?q+'&':'')+'limit=1000&offset='+o)||[];
+    out.push(...p); if(p.length<1000) return out; } },
   ekle:(t,v)=>API.req('/rest/v1/'+t,{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(v)}),
   yama:(t,q,v)=>API.req('/rest/v1/'+t+'?'+q,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(v)}),
   bas:(t,v,c)=>API.req('/rest/v1/'+t+'?on_conflict='+c,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(v)}),
@@ -755,10 +760,10 @@ async function veriYukle(){
   }
   const [koc,ogr,kat,odv,knu,grp,ogv]=await Promise.all([
     API.sec('oz_koclar','select=*&id=eq.'+benimId),
-    API.sec('oz_ogrenciler','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc'),
-    API.sec('oz_katalog','select=*&koc_id=eq.'+benimId+'&order=ad.asc'),
-    API.sec('oz_odevler','select=*,oz_kalemler(*)&order=verilis.desc'),
-    API.sec('oz_konu','select=*'),
+    API.hepsi('oz_ogrenciler','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc,id.asc'),
+    API.hepsi('oz_katalog','select=*&koc_id=eq.'+benimId+'&order=ad.asc,id.asc'),
+    API.hepsi('oz_odevler','select=*,oz_kalemler(*)&order=verilis.desc,id.asc'),
+    API.hepsi('oz_konu','select=*&order=ogrenci_id.asc,konu.asc'),
     /* Sınıf grupları tablosu henüz kurulmamış olabilir. Kurulum SQL'i
        çalışmadan panel çökmesin diye hata yutuluyor; GRUP_VAR false
        kalınca sınıf ekranı "önce kurulumu çalıştır" diyor. */
