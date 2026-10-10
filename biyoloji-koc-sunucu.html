@@ -1,3 +1,4 @@
+<html lang="tr">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Biyoser · Özel Ders Koç Paneli</title>
@@ -52,6 +53,18 @@ input,select,textarea{font-family:inherit;font-size:inherit}
 .nav .badge{margin-left:auto;background:var(--accent-2);color:#08282a;border-radius:20px;font-size:11px;padding:0 7px;font-weight:700}
 .nav .sn{font-size:11px;color:#7E9AA3;display:block;font-weight:400;margin-top:1px}
 .nav button.on .sn{color:#A9CBD1}
+.nav button.snf{font-weight:600;color:#E3EDF0}
+.nav button.ic{padding-left:34px;font-size:13px}
+.nav .ok{width:12px;flex:none;color:#7E9AA3;font-size:11px}
+.nav-bos{padding:6px 16px 8px 34px;font-size:12px;color:#6E8A93}
+.sd-ozet{display:flex;gap:22px;flex-wrap:wrap;font-size:13px}
+tr.tik{cursor:pointer}
+tr.tik:hover td{background:var(--accent-soft)}
+.sd-odev{padding:10px 0;border-top:1px solid var(--line-soft)}
+.sd-ust{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px}
+.sd-ilerle{display:flex;gap:10px;align-items:center;margin-top:6px}
+.sd-bar{height:7px;border-radius:4px;background:var(--line-soft);overflow:hidden;flex:1;min-width:80px;max-width:420px}
+.sd-bar i{display:block;height:100%;background:var(--ok)}
 .rail-sec{padding:12px 16px 5px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#5F7B85;font-weight:700}
 .rail-add{display:block;width:calc(100% - 24px);margin:6px 12px 4px;background:rgba(79,179,169,.14);color:#8FD3CB;
   border:1px dashed rgba(79,179,169,.45);border-radius:7px;padding:8px;font-weight:600;font-size:13px}
@@ -210,7 +223,7 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
       <div id="logoBox"></div>
       <div class="brand">Özel Ders<b id="brandName">Biyoser</b></div>
     </div>
-    <div class="rail-sec">Öğrenciler</div>
+    <div class="rail-sec">Sınıflar</div>
     <nav class="nav" id="navOgr"></nav>
     <button class="rail-add" onclick="ogrModal()">+ Yeni öğrenci</button>
     <div class="rail-sec">Sistem</div>
@@ -253,6 +266,12 @@ mark{background:#FFF0A8;color:inherit;padding:0 1px;border-radius:2px}
     <section class="page" id="pg-durum">
       <p class="sub" style="margin-top:0">Çözülen her testin doğru, yanlış ve boş sayısı. Yeniden eskiye sıralı.</p>
       <div id="durumOut"></div>
+    </section>
+
+    <!-- SINIF DURUMU -->
+    <section class="page" id="pg-sdurum">
+      <p class="sub" style="margin-top:0">Sınıftaki her öğrencinin bekleyen ödevi, çözdüğü testler ve sınıfa verilen ödevlerin ilerlemesi.</p>
+      <div id="sdurumOut"></div>
     </section>
 
     <!-- TAKİP -->
@@ -726,7 +745,7 @@ async function veriYukle(){
       throw new Error('Veritabanı kurulumu eksik. 01-biyoloji-veritabani.sql dosyasını Supabase → SQL Editor\'de çalıştır.');
     throw e;
   }
-  const [koc,ogr,kat,odv,knu,grp]=await Promise.all([
+  const [koc,ogr,kat,odv,knu,grp,ogv]=await Promise.all([
     API.sec('oz_koclar','select=*&id=eq.'+benimId),
     API.sec('oz_ogrenciler','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc'),
     API.sec('oz_katalog','select=*&koc_id=eq.'+benimId+'&order=ad.asc'),
@@ -735,8 +754,11 @@ async function veriYukle(){
     /* Sınıf grupları tablosu henüz kurulmamış olabilir. Kurulum SQL'i
        çalışmadan panel çökmesin diye hata yutuluyor; GRUP_VAR false
        kalınca sınıf ekranı "önce kurulumu çalıştır" diyor. */
-    API.sec('oz_gruplar','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc').catch(()=>null)
+    API.sec('oz_gruplar','select=*&koc_id=eq.'+benimId+'&order=olusturma.asc').catch(()=>null),
+    /* Sınıf ödevi kimliği (OZEL-DERS-sinif-odev-esitle.sql). Yoksa sınıf ödevi eskisi gibi işaretsiz yazılır. */
+    API.sec('oz_odevler','select=grup_odev&limit=1').then(()=>true).catch(()=>false)
   ]);
+  ODEV_GRUP=!!ogv;
   DB.gruplar=grp||[];
   GRUP_VAR=!!grp;
   DB.koc=(koc&&koc[0])||{ad:'Biyoser',tel:'',drive_url:'',ogr_panel_url:'',sure:{},logo:null};
@@ -746,12 +768,12 @@ async function veriYukle(){
   DB.ogrenciler=(ogr||[]).map(o=>Object.assign({},o,{konuDurum:{}}));
   (knu||[]).forEach(k=>{const o=DB.ogrenciler.find(x=>x.id===k.ogrenci_id);if(o)o.konuDurum[k.konu]=k.durum;});
   DB.katalog=(kat||[]).map(t=>({id:t.id,sinif:t.sinif,unite:t.unite,konu:t.konu,ad:t.ad,link:t.link,kaynak:t.kaynak,soru:t.soru}));
-  DB.odevler=(odv||[]).map(o=>({id:o.id,ogrenciId:o.ogrenci_id,verilis:o.verilis,teslim:o.teslim,kendi:o.kendi,
+  DB.odevler=(odv||[]).map(o=>({id:o.id,ogrenciId:o.ogrenci_id,verilis:o.verilis,teslim:o.teslim,kendi:o.kendi,grupOdev:o.grup_odev||null,
     kalemler:(o.oz_kalemler||[]).map(kalemCevir)}));
 }
 async function tazele(){
   mesgul(1);
-  try{await veriYukle();navCiz();if(AKTIF)gitOgr(AKTIF,ALT);}
+  try{await veriYukle();navCiz();if(AKTIF)gitOgr(AKTIF,ALT);else if(SINIF)gitSinif(SINIF,ALT);}
   catch(e){toast('Yenilenemedi: '+e.message);}
   finally{mesgul(0);}
 }
@@ -794,16 +816,144 @@ function yeniSubeAdi(kademe){
   return '';
 }
 
-function navCiz(){
-  $('navOgr').innerHTML=DB.ogrenciler.length?DB.ogrenciler.map(o=>{
-    const od=DB.odevler.filter(x=>x.ogrenciId===o.id&&!x.kendi);
-    const bek=od.flatMap(x=>x.kalemler).filter(k=>k.durum!=='ok').length;
-    const bagli=!!o.auth_id;
-    return `<button data-o="${o.id}" class="${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
+/* ---------- sınıflar sol menüde (10 Eki 2026) ----------
+   Sol menüde öğrenciler sınıflarının altında durur; sınıfa tıklayınca öğrencileri açılır ve
+   sağda sınıfın durumu gelir. Sınıfı olmayan (ya da sınıfı kapatılmış) öğrenciler "Sınıfsız"
+   altında toplanır. Sınıfa ödev buradan topluca verilir; sınıfsız öğrenciye ödev tek tek verilir. */
+let SINIF=null, ODEV_GRUP=false;
+const ACIK=new Set(), SINIFSIZ='__sinifsiz';
+function sinifKey(o){ const g=grupOf(o.grup_id); return (g&&!g.arsiv)?g.id:SINIFSIZ; }
+function acikSiniflar(){ return DB.gruplar.filter(g=>!g.arsiv).sort((a,b)=>a.ad.localeCompare(b.ad,'tr',{numeric:true})); }
+function sinifUyeleri(k){ return DB.ogrenciler.filter(o=>sinifKey(o)===k); }
+function sinifAd(k){ return k===SINIFSIZ?'Sınıfsız':((grupOf(k)||{}).ad||''); }
+function bekleyenSay(oid){ return DB.odevler.filter(x=>x.ogrenciId===oid&&!x.kendi).flatMap(x=>x.kalemler).filter(k=>k.durum!=='ok').length; }
+function sinifSek(k){ return k===SINIFSIZ?[['sdurum','Durum']]:[['sdurum','Durum'],['odev','Sınıfa ödev ver']]; }
+function ogrDugme(o,ic){
+  const bek=bekleyenSay(o.id), bagli=!!o.auth_id, g=grupOf(o.grup_id);
+  return `<button data-o="${o.id}" class="${ic?'ic ':''}${AKTIF===o.id?'on':''}" onclick="gitOgr('${o.id}')">
       <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.ad)}</span>
-      <span class="sn">${esc(o.sinif)}${(g=>g?' · '+esc(g.ad):'')(grupOf(o.grup_id))}${bagli?'':' · davet bekliyor'}</span></span>
+      <span class="sn">${esc(o.sinif)}${(!ic&&g)?' · '+esc(g.ad):''}${bagli?'':' · davet bekliyor'}</span></span>
       ${bek?`<span class="badge">${bek}</span>`:''}</button>`;
-  }).join(''):'<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz öğrenci yok.</div>';
+}
+function navSiniflar(){
+  const kler=acikSiniflar().map(g=>g.id);
+  if(sinifUyeleri(SINIFSIZ).length) kler.push(SINIFSIZ);
+  if(!kler.length) return '<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz sınıf ya da öğrenci yok.</div>';
+  return kler.map(k=>{
+    const uye=sinifUyeleri(k), acik=ACIK.has(k), bek=uye.reduce((a,o)=>a+bekleyenSay(o.id),0);
+    return `<button class="snf${(SINIF===k&&!AKTIF)?' on':''}" aria-expanded="${acik}" onclick="sinifTikla('${k}')">
+        <span class="ok" aria-hidden="true">${acik?'▾':'▸'}</span>
+        <span style="flex:1;min-width:0"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sinifAd(k))}</span>
+        <span class="sn">${uye.length} öğrenci</span></span>
+        ${bek?`<span class="badge">${bek}</span>`:''}</button>`+
+      (acik?(uye.length?uye.map(o=>ogrDugme(o,true)).join(''):'<div class="nav-bos">Henüz öğrenci yok.</div>'):'');
+  }).join('');
+}
+/* Açık sınıfın başlığına ikinci kez tıklamak yalnız listeyi kapatır, sayfa yerinde kalır. */
+function sinifTikla(k){
+  if(SINIF===k&&!AKTIF&&ACIK.has(k)){ ACIK.delete(k); navCiz(); return; }
+  ACIK.add(k); gitSinif(k);
+}
+function gitSinif(k,alt){
+  if(k!==SINIFSIZ&&!grupOf(k)){ SINIF=null; return gitSis('grup'); }
+  AKTIF=null; SINIF=k; ACIK.add(k);
+  const sek=sinifSek(k);
+  ALT=(alt&&sek.some(x=>x[0]===alt))?alt:'sdurum';
+  const uye=sinifUyeleri(k), g=grupOf(k);
+  $('bosEkran').style.display='none'; $('ogrHead').style.display='';
+  $('ohAd').textContent=sinifAd(k);
+  $('ohTag').textContent=[uye.length+' öğrenci', g&&g.davet_kodu?'sınıf kodu '+g.davet_kodu:null,
+    k===SINIFSIZ?'ödev öğrenci öğrenci verilir':null].filter(Boolean).join(' · ');
+  navCiz(); altCiz(); gitAlt(ALT);
+}
+/* Sınıf ödev ekranında her test için sınıfta kaç kişiye verildiği. */
+function sinifGecmis(k){
+  const m={}, uye=new Set(sinifUyeleri(k).filter(o=>!o.arsiv).map(o=>o.id));
+  DB.odevler.filter(x=>uye.has(x.ogrenciId)&&!x.kendi).forEach(o=>o.kalemler.forEach(kl=>{
+    const g=m[kl.testId]=m[kl.testId]||{kisi:new Set(),bek:0};
+    g.kisi.add(o.ogrenciId); if(kl.durum!=='ok') g.bek++;
+  }));
+  return m;
+}
+function sinifRozet(g){
+  if(!g) return '';
+  const n=sinifUyeleri(SINIF).filter(o=>!o.arsiv).length;
+  return `<span class="pill ${g.bek?'p-warn':'p-neu'}" title="Bu sınıfta testi alan öğrenci sayısı">${g.kisi.size}/${n} kişiye verildi${g.bek?' · '+g.bek+' bekliyor':''}</span>`;
+}
+function ogrOzet(o){
+  const s7=new Date(Date.now()-7*864e5).toISOString().slice(0,10), bg=bugun();
+  let bek=0,gec=0,coz=0,son7=0,D=0,Y=0,B=0,nt=0,son='';
+  DB.odevler.filter(x=>x.ogrenciId===o.id).forEach(x=>x.kalemler.forEach(k=>{
+    if(k.durum!=='ok'){ if(!x.kendi){ bek++; if(x.teslim&&String(x.teslim)<bg) gec++; } return; }
+    coz++; D+=k.D||0; Y+=k.Y||0; B+=k.B||0; nt+=net(k.D,k.Y);
+    const t=String(k.tarih||x.verilis||''); if(t>=s7) son7++; if(t>son) son=t;
+  }));
+  const t=D+Y+B;
+  return {o,bek,gec,coz,son7,oran:t?Math.round(D/t*100):null,ortNet:coz?Math.round(nt/coz*10)/10:null,son};
+}
+/* Sınıfa verilen ödevler: aynı sınıf ödevinin kopyaları grup_odev ile, işaretsiz eski ödevler
+   aynı gün + aynı teslim + aynı test setiyle bir araya toplanır (en az 2 öğrencide görünen). */
+function sinifOdevleri(uye){
+  const ids=new Set(uye.map(o=>o.id)), m={};
+  DB.odevler.filter(x=>ids.has(x.ogrenciId)&&!x.kendi).forEach(x=>{
+    const imza=x.kalemler.map(k=>k.testId+':'+k.ad).sort().join('|');
+    const key=x.grupOdev||(x.verilis+'|'+(x.teslim||'')+'|'+imza);
+    const s=m[key]=m[key]||{verilis:x.verilis,teslim:x.teslim,testler:x.kalemler.map(k=>k.ad),uye:[],isaretli:!!x.grupOdev};
+    if(String(x.verilis)<String(s.verilis)) s.verilis=x.verilis;
+    const bit=x.kalemler.filter(k=>k.durum==='ok').length;
+    s.uye.push({o:uye.find(u=>u.id===x.ogrenciId),bit,top:x.kalemler.length,gec:x.teslim&&String(x.teslim)<bugun()&&bit<x.kalemler.length});
+  });
+  return Object.values(m).filter(s=>s.isaretli||s.uye.length>=2).sort((a,b)=>String(b.verilis).localeCompare(String(a.verilis)));
+}
+function sinifDurumCiz(){
+  const k=SINIF, out=$('sdurumOut');
+  if(!k) return;
+  const uye=sinifUyeleri(k).filter(o=>!o.arsiv);
+  if(!uye.length){
+    out.innerHTML=`<div class="empty"><b>Bu sınıfta henüz öğrenci yok</b>${k===SINIFSIZ?'':'Sınıflar sayfasındaki sınıf kodunu öğrencilerine ver.'}</div>`;
+    return;
+  }
+  const R=uye.map(ogrOzet);
+  const bek=R.reduce((a,r)=>a+r.bek,0), gecen=R.filter(r=>r.gec).length, son7=R.reduce((a,r)=>a+r.son7,0);
+  const calisan=R.filter(r=>r.son7).length, orn=R.filter(r=>r.oran!==null);
+  const ortOran=orn.length?Math.round(orn.reduce((a,r)=>a+r.oran,0)/orn.length):null;
+  const kut=(l,v,c)=>`<span>${l}<b style="display:block;font-size:20px${c?';color:'+c:''}" class="mono">${v}</b></span>`;
+  let h=`<div class="card"><h3>Sınıfın durumu</h3><div class="sd-ozet">
+      ${kut('Öğrenci',uye.length)}${kut('Bekleyen test',bek,bek?'var(--warn)':'')}${kut('Ödevi geciken',gecen+' öğrenci',gecen?'var(--bad)':'')}
+      ${kut('Son 7 günde çözülen',son7+' test')}${kut('Son 7 günde çalışan',calisan+'/'+uye.length)}${kut('Ortalama doğru',ortOran===null?'—':'%'+ortOran)}</div>
+      ${k===SINIFSIZ?'<p class="hint" style="margin-top:10px">Sınıfsız öğrencilere ödev tek tek verilir: soldan öğrencinin adına tıkla, Ödev ver sekmesini aç.</p>':''}</div>`;
+  R.sort((a,b)=>(b.gec>0)-(a.gec>0)||b.bek-a.bek||a.o.ad.localeCompare(b.o.ad,'tr'));
+  h+=`<div class="card"><h3>Öğrenciler<span class="hint" style="font-weight:400"> · satıra tıklayınca öğrencinin sayfası açılır</span></h3>
+    <div style="overflow-x:auto"><table><thead><tr><th>Öğrenci</th><th>Durum</th><th>Bekleyen</th><th>Çözülen</th><th>Son 7 gün</th><th>Doğru %</th><th>Test başı net</th><th>Son çözüm</th></tr></thead><tbody>`+
+    R.map(r=>{
+      const d=r.gec?'<span class="pill p-bad">gecikti</span>':r.bek?'<span class="pill p-warn">bekliyor</span>':r.coz?'<span class="pill p-ok">güncel</span>':'<span class="pill p-neu">başlamadı</span>';
+      return `<tr class="tik" onclick="gitOgr('${r.o.id}')"><td><b>${esc(r.o.ad)}</b><div class="hint">${esc(r.o.sinif)}${r.o.auth_id?'':' · davet bekliyor'}</div></td>
+        <td>${d}</td><td class="mono">${r.bek||'·'}</td><td class="mono">${r.coz}</td><td class="mono">${r.son7||'·'}</td>
+        <td>${r.oran===null?'<span class="hint">—</span>':`<span class="pill ${r.oran>=70?'p-ok':r.oran>=50?'p-warn':'p-bad'}">%${r.oran}</span>`}</td>
+        <td class="mono">${r.ortNet===null?'—':r.ortNet}</td><td class="hint" style="white-space:nowrap">${r.son?trh(r.son):'—'}</td></tr>`;
+    }).join('')+'</tbody></table></div></div>';
+  if(k!==SINIFSIZ){
+    const S=sinifOdevleri(uye);
+    h+=`<div class="card"><h3>Sınıfa verilen ödevler</h3>`+(S.length?S.slice(0,12).map(s=>{
+      const biten=s.uye.filter(u=>u.bit===u.top).length, kb=s.uye.reduce((a,u)=>a+u.bit,0), kt=s.uye.reduce((a,u)=>a+u.top,0);
+      const kalan=s.uye.filter(u=>u.bit<u.top).sort((a,b)=>b.gec-a.gec);
+      const almayan=uye.length-s.uye.length;
+      return `<div class="sd-odev"><div class="sd-ust"><b>${trh(s.verilis)} tarihli ödev</b><span class="hint">teslim ${trh(s.teslim)} · ${s.testler.length} test</span>
+          <span class="pill ${biten===s.uye.length?'p-ok':'p-neu'}" style="margin-left:auto">${biten}/${s.uye.length} öğrenci bitirdi</span></div>
+        <div class="sd-ilerle"><span class="sd-bar"><i style="width:${kt?Math.round(kb/kt*100):0}%"></i></span><span class="hint mono">${kb}/${kt} test</span></div>
+        <div class="hint" style="margin-top:4px">${s.testler.slice(0,4).map(esc).join(' · ')}${s.testler.length>4?' · +'+(s.testler.length-4):''}</div>
+        ${kalan.length?`<details style="margin-top:6px"><summary class="hint" style="cursor:pointer">Bitirmeyenler (${kalan.length})</summary><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${
+          kalan.map(u=>`<button class="pill ${u.gec?'p-bad':'p-warn'}" style="cursor:pointer;border:0" onclick="gitOgr('${u.o.id}')">${esc(u.o.ad)} · ${u.bit}/${u.top}</button>`).join('')}</div></details>`:''}
+        ${almayan>0?`<div class="hint" style="margin-top:4px">${almayan} öğrenci bu ödevi almamış: sınıfa sonradan katılmış olabilir.</div>`:''}
+      </div>`;
+    }).join(''):'<p class="hint">Bu sınıfa henüz toplu ödev verilmedi. "Sınıfa ödev ver" sekmesinden başla.</p>')+'</div>';
+  }
+  out.innerHTML=h;
+}
+
+function navCiz(){
+  $('navOgr').innerHTML=GRUP_VAR?navSiniflar():(DB.ogrenciler.length?DB.ogrenciler.map(o=>ogrDugme(o,false)).join('')
+    :'<div style="padding:10px 16px;font-size:12.5px;color:#6E8A93">Henüz öğrenci yok.</div>');
   $('navSis').innerHTML=SISSEK.map(([k,ad])=>{
     let b='';
     if(k==='kat'&&DB.katalog.length)b=`<span class="badge">${DB.katalog.length}</span>`;
@@ -812,7 +962,7 @@ function navCiz(){
   }).join('');
 }
 function altCiz(){
-  $('subtabs').innerHTML=ALTSEK.map(([k,ad])=>
+  $('subtabs').innerHTML=(SINIF?sinifSek(SINIF):ALTSEK).map(([k,ad])=>
     `<button class="${ALT===k?'on':''}" onclick="gitAlt('${k}')">${ad}</button>`).join('');
 }
 function sayfaGoster(id){
@@ -822,7 +972,7 @@ function sayfaGoster(id){
 function gitOgr(id,alt){
   const o=DB.ogrenciler.find(x=>x.id===id);
   if(!o){AKTIF=null;return gitSis('kat');}
-  AKTIF=id; ALT=alt||(ALTSEK.some(x=>x[0]===ALT)?ALT:'odev');
+  AKTIF=id; SINIF=null; ACIK.add(sinifKey(o)); ALT=alt||(ALTSEK.some(x=>x[0]===ALT)?ALT:'odev');
   $('bosEkran').style.display='none';
   $('ogrHead').style.display='';
   $('ohAd').textContent=o.ad;
@@ -836,10 +986,11 @@ function gitAlt(k){
   if(k==='takip')takipCiz();
   if(k==='davet')davetCiz();
   if(k==='bilgi')bilgiCiz();
+  if(k==='sdurum')sinifDurumCiz();
   window.scrollTo(0,0);
 }
 function gitSis(k){
-  AKTIF=null;ALT=k;
+  AKTIF=null;SINIF=null;ALT=k;
   $('ogrHead').style.display='none';$('bosEkran').style.display='none';
   navCiz();sayfaGoster(k);
   if(k==='kat')katalogCiz();
@@ -1389,7 +1540,7 @@ function rozet(g){
   return `<span class="pill p-neu" title="${g.kez} kez verildi">${g.kez}. kez · son ${g.net} net</span>`;
 }
 function odevCiz(){
-  const q=nrm($('q').value), oid=AKTIF||'', G=gecmis(oid), gizle=($('qGizle')||{}).checked;
+  const q=nrm($('q').value), oid=AKTIF||'', G=SINIF?sinifGecmis(SINIF):gecmis(oid), gizle=($('qGizle')||{}).checked;
   let list=DB.katalog.filter(t=>!q||nrm(t.sinif+' '+t.unite+' '+t.konu+' '+t.ad+' '+(t.kaynak||'')).includes(q));
   const gizlenen=gizle?list.filter(t=>G[t.id]).length:0;
   if(gizle)list=list.filter(t=>!G[t.id]);
@@ -1412,7 +1563,7 @@ function odevCiz(){
           <span class="ad">${vurgula(t.ad,q)}</span>
           <span class="sq">${t.soru?t.soru+' soru':''}</span>
           ${dk.length>1&&t.kaynak?`<span class="kl" title="${esc(t.kaynak)}">${vurgula(t.kaynak,q)}</span>`:''}
-          ${rozet(G[t.id])}
+          ${SINIF?sinifRozet(G[t.id]):rozet(G[t.id])}
           ${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">önizle</a>`:'<span class="pill p-warn">bağlantı yok</span>'}
         </label>`).join('')+`</div>`;
       }).join('')+`</div>`;
@@ -1424,6 +1575,7 @@ function secimTemizle(){secili.clear();odevCiz();}
 function trayCiz(){
   $('tray').style.display=secili.size?'flex':'none';
   $('traySay').textContent=secili.size+' test seçildi';
+  if(SINIF&&SINIF!==SINIFSIZ&&!AKTIF) $('traySay').textContent=secili.size+' test seçildi · '+sinifAd(SINIF)+' ('+grupUyeleri(SINIF).filter(x=>!x.arsiv).length+' öğrenci)';
   /* Seçili öğrencinin sınıfı varsa "tüm sınıfa ver" seçeneği çıkar.
      Ayrı bir ekran yerine buraya konuldu: koç zaten testleri seçmiş
      durumda, tek kutu işaretlemesi yetiyor. */
@@ -1438,16 +1590,17 @@ function trayCiz(){
   if(!$('tTeslim').value){const d=new Date();d.setDate(d.getDate()+7);$('tTeslim').value=d.toISOString().slice(0,10);}
 }
 async function odevOlustur(){
-  const oid=AKTIF;
-  if(!oid){toast('Önce soldan bir öğrenci seç.');return;}
+  const oid=AKTIF, sinifMod=!!(SINIF&&SINIF!==SINIFSIZ&&!oid);
+  if(!oid&&!sinifMod){toast('Önce soldan bir öğrenci ya da sınıf seç.');return;}
   const o=DB.ogrenciler.find(x=>x.id===oid);
-  const grupMu=!!($('trayGrup')&&$('trayGrup').checked);
-  const g=grupMu&&o?grupOf(o.grup_id):null;
+  const grupMu=sinifMod||!!($('trayGrup')&&$('trayGrup').checked);
+  const g=sinifMod?grupOf(SINIF):(grupMu&&o?grupOf(o.grup_id):null);
   /* Gruba verirken ödev, grubun HER ÜYESİNE ayrı satır olarak yazılır.
      Ortak bir ödev satırı tutup durumu paylaştırmak, iki öğrencinin
      birbirinin sonucunu ezmesi demekti. Ayrı satır, takibi kendiliğinden
      öğrenci başına bırakıyor ve ödev şemasına hiç dokunmuyor. */
-  const hedefler = g ? grupUyeleri(g.id).map(x=>x.id) : [oid];
+  const hedefler = g ? grupUyeleri(g.id).filter(x=>!x.arsiv).map(x=>x.id) : [oid];
+  if(!hedefler.length){toast('Bu sınıfta öğrenci yok.');return;}
 
   /* Tekrar uyarısı: gruba verirken "kimde tekrar" bilgisi kalabalık
      yapıyor, kaç kişide tekrar olduğunu söylemek yetiyor. */
@@ -1469,9 +1622,11 @@ async function odevOlustur(){
   }
 
   const secilenler=[...secili], teslim=$('tTeslim').value||null;
+  /* Aynı sınıf ödevinin kopyaları tek kimlik taşır; sınıfa sonradan katılan öğrenci bu kimlikle eski ödevi alır. */
+  const gk=(g&&ODEV_GRUP&&window.crypto&&crypto.randomUUID)?crypto.randomUUID():null;
   const r=await guvenli(async()=>{
     const od=await API.ekle('oz_odevler',
-      hedefler.map(id=>({ogrenci_id:id,verilis:bugun(),teslim,kendi:false})));
+      hedefler.map(id=>Object.assign({ogrenci_id:id,verilis:bugun(),teslim,kendi:false},gk?{grup_id:g.id,grup_odev:gk}:{})));
     const kal=[];
     (od||[]).forEach(odev=>secilenler.forEach(id=>{
       const t=DB.katalog.find(x=>x.id===id);
@@ -1486,7 +1641,7 @@ async function odevOlustur(){
 
   r.odevler.forEach(odev=>{
     DB.odevler.unshift({id:odev.id,ogrenciId:odev.ogrenci_id,verilis:odev.verilis,
-      teslim:odev.teslim,kendi:false,
+      teslim:odev.teslim,kendi:false,grupOdev:odev.grup_odev||null,
       kalemler:r.ham.filter(k=>k.odev_id===odev.id).map(kalemCevir)});
   });
   if($('trayGrup'))$('trayGrup').checked=false;
@@ -1637,7 +1792,9 @@ async function baslat(){
     $('aAd').value=DB.koc.ad||'';$('aTel').value=DB.koc.tel||'';
     $('aOgrUrl').value=DB.koc.ogr_panel_url||'';$('dUrl').value=DB.koc.drive_url||'';
     logoCiz();navCiz();katalogCiz();
-    if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id,'odev');
+    const ilkSinif=GRUP_VAR?acikSiniflar()[0]:null;
+    if(ilkSinif)gitSinif(ilkSinif.id);
+    else if(DB.ogrenciler.length)gitOgr(DB.ogrenciler[0].id,'odev');
     else{$('bosEkran').style.display='';}
   }catch(e){
     if(e.kod===401){oturumSil();kapiMesaj('Oturumun düşmüş, tekrar giriş yap.');ekran('giris');}
