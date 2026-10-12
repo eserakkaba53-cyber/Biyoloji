@@ -588,6 +588,17 @@ function oturumOku(){
 }
 function oturumSil(){TOKEN=YENILE=KULLANICI=null;BITIS=0;try{localStorage.removeItem(OTURUM_ANAHTAR);}catch(e){}}
 
+/* Giriş hatalarını Türkçeye çevirir (12 Eki 2026). Supabase'in İngilizce iletisi öğrenciye olduğu gibi
+   gösteriliyordu; en sık görülenler: bot doğrulaması jetonu yok, şifre yanlış, e-posta onaylanmamış. */
+function trHata(s){
+  s=String(s||'');
+  if(/captcha/i.test(s)) return 'Bot doğrulaması tamamlanamadı. Sayfayı yenileyip tekrar dene. Bağlantıyı WhatsApp ya da Instagram içinden açtıysan Chrome veya Safari’de aç; reklam engelleyici ya da VPN varsa kapat.';
+  if(/invalid login credentials/i.test(s)) return 'E-posta ya da şifre yanlış. Şifreni hatırlamıyorsan "Şifremi unuttum"a bas.';
+  if(/email not confirmed/i.test(s)) return 'E-postan henüz onaylanmamış. Gelen kutundaki (gereksiz klasörüne de bak) onay bağlantısına tıkla, sonra giriş yap.';
+  if(/user already registered/i.test(s)) return 'Bu e-postayla zaten bir hesap var. Giriş yap ya da "Şifremi unuttum"a bas.';
+  if(/rate limit|too many requests/i.test(s)) return 'Çok sık denendi. Birkaç dakika bekleyip tekrar dene.';
+  return s;
+}
 const API={
   async ham(yol,opt){
     opt=opt||{};
@@ -598,7 +609,7 @@ const API={
     let j=null; if(m){try{j=JSON.parse(m);}catch(e){j=m;}}
     if(!r.ok){
       const s=(j&&(j.message||j.error_description||j.msg||j.error))||('Sunucu hatası '+r.status);
-      const e=new Error(s); e.kod=r.status; throw e;
+      const e=new Error(trHata(s)); e.kod=r.status; throw e;
     }
     return j;
   },
